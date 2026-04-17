@@ -1,6 +1,9 @@
 data/raw/
+data/train_clean.csv
+data/val_clean.csv
+.DS_Store
 __pycache__/
 .ipynb_checkpoints/
 *.pyc
 .env
-.DS_Store
+venv/
