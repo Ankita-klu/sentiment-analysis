@@ -63,28 +63,45 @@ st.sidebar.header("System Status")
 st.sidebar.warning("DEVELOPMENT MODE: Utilizing simulated dummy data. This module will be connected to actual CSV/Model outputs upon completion by the Modeling team.")
 
 # ---------------------------------------------------------
-# 2. Evaluation Metrics Module
+# 2. Advanced Evaluation Metrics Module
 # ---------------------------------------------------------
-st.header("1. Core Performance Metrics")
-st.write("Quantitative analysis of model performance focusing on the Macro F1 Score.")
+from sklearn.metrics import accuracy_score
 
-# Calculate Macro F1 Score: harmonic mean of precision and recall
-# Crucial for assessing performance on imbalanced classification tasks
+st.header("1. Core Performance Metrics")
+st.write("Quantitative analysis of model performance based on Kaggle standard metrics.")
+
+# Calculate Top-1 Accuracy (Required by Kaggle dataset definition)
+top1_accuracy = accuracy_score(data_df['True_Label'], data_df['Predicted_Label'])
+
+# Calculate Macro F1 Score
 macro_f1 = f1_score(data_df['True_Label'], data_df['Predicted_Label'], average='macro')
 
-col1, col2 = st.columns([1, 2])
+# Display primary metrics using three columns for better layout
+col1, col2, col3 = st.columns([1, 1, 2])
 
 with col1:
-    st.metric(label="Overall F1 Score (Macro)", value=f"{macro_f1:.4f}")
-    st.caption("Target: Close to 1.0. Measures balance between Precision and Recall.")
+    st.metric(label="Top-1 Accuracy", value=f"{top1_accuracy * 100:.2f}%")
+    st.caption("Primary metric defined by Kaggle.")
 
 with col2:
+    st.metric(label="Macro F1 Score", value=f"{macro_f1:.4f}")
+    st.caption("Harmonic mean of precision and recall.")
+
+with col3:
     st.write("**Detailed Classification Report**")
-    # Generate report as dictionary to transform into a styled DataFrame
     report_dict = classification_report(data_df['True_Label'], data_df['Predicted_Label'], output_dict=True)
     report_df = pd.DataFrame(report_dict).transpose()
-    # Note: Using width='stretch' to adhere to updated Streamlit API standards
     st.dataframe(report_df.style.format("{:.2f}"), width='stretch')
+
+st.markdown("---")
+
+# ---------------------------------------------------------
+# 2.1 ROC-AUC Curve Placeholder (Pending Probabilities)
+# ---------------------------------------------------------
+st.header("2. ROC-AUC Analysis")
+st.info("The ROC curve will be generated here once the Modeling team provides the prediction probabilities (predict_proba) alongside the class labels.")
+# Note: Actual ROC generation requires prediction probabilities, not just final class labels.
+# This section serves as a placeholder to ensure the evaluation framework is structurally complete.
 
 st.markdown("---")
 
