@@ -3,3 +3,6 @@ __pycache__/
 .ipynb_checkpoints/
 *.pyc
 .env
+data/train_clean.csv
+data/val_clean.csv
+data/raw/
