@@ -6,8 +6,8 @@ import seaborn as sns
 from wordcloud import WordCloud
 
 #  1. LOAD DATA
-train_df = pd.read_csv("data/raw/twitter_training.csv", header=None)
-val_df   = pd.read_csv("data/raw/twitter_validation.csv", header=None)
+train_df = pd.read_csv(r"D:\2_Study\2_Study Abroad\Master\KLU\Courses\ML_DL\Twitter Sentiment analysis\twitter_training.csv", header=None)
+val_df   = pd.read_csv(r"D:\2_Study\2_Study Abroad\Master\KLU\Courses\ML_DL\Twitter Sentiment analysis\twitter_validation.csv", header=None)
 
 # Assign column names
 train_df.columns = ["tweet_id", "topic", "sentiment", "tweet"]
