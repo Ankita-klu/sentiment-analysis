@@ -12,8 +12,8 @@ nltk.download("wordnet")
 nltk.download("omw-1.4")
 
 # 1. LOAD DATA 
-train_df = pd.read_csv("data/raw/twitter_training.csv", header=None)
-val_df   = pd.read_csv("data/raw/twitter_validation.csv", header=None)
+train_df = pd.read_csv(r"D:\2_Study\2_Study Abroad\Master\KLU\Courses\ML_DL\Twitter Sentiment analysis\twitter_training.csv", header=None)
+val_df   = pd.read_csv(r"D:\2_Study\2_Study Abroad\Master\KLU\Courses\ML_DL\Twitter Sentiment analysis\twitter_validation.csv", header=None)
 
 train_df.columns = ["tweet_id", "topic", "sentiment", "tweet"]
 val_df.columns   = ["tweet_id", "topic", "sentiment", "tweet"]

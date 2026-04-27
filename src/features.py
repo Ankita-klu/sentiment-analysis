@@ -34,3 +34,4 @@ def save_vectorizer(vectorizer, path="data/vectorizer.pkl"):
     """Saves the fitted vectorizer so teammates can reuse it."""
     joblib.dump(vectorizer, path)
     print(f"Vectorizer saved to {path}")
+

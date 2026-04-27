@@ -10,6 +10,7 @@
 
 import os
 import sys
+
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -24,14 +25,13 @@ from sklearn.metrics import classification_report, confusion_matrix
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from features import extract_features, save_vectorizer
 
+repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+data_dir = os.path.join(repo_root, 'data')
+
 # ── 1. LOAD ANKITA'S CLEANED DATA ─────────────
 print("Loading cleaned data...")
-train_df = pd.read_csv("data/train_clean.csv")
-val_df   = pd.read_csv("data/val_clean.csv")
-
-# Fill any remaining NaN values just in case
-train_df["clean_tweet"] = train_df["clean_tweet"].fillna("")
-val_df["clean_tweet"]   = val_df["clean_tweet"].fillna("")
+train_df = pd.read_csv(os.path.join(data_dir, "train_clean.csv"))
+val_df   = pd.read_csv(os.path.join(data_dir, "val_clean.csv"))
 
 X_train = train_df["clean_tweet"]
 y_train = train_df["sentiment"]
@@ -49,7 +49,6 @@ X_train_vec, X_val_vec, vectorizer = extract_features(X_train, X_val)
 # ── 3. DEFINE MODELS ──────────────────────────
 models = {
     "Logistic Regression": LogisticRegression(
-        multi_class='multinomial',
         solver='lbfgs',
         max_iter=1000,
         class_weight='balanced'   # handles class imbalance
@@ -142,4 +141,5 @@ print(f"\nSaved best model ({best_name}) to data/best_model.pkl")
 print("Saved vectorizer to data/vectorizer.pkl")
 
 print("\nModeling complete!")
-print(f"Leah: load 'data/best_model.pkl' and 'data/vectorizer.pkl' for evaluation and demo.")
+print(f"Load 'data/best_model.pkl' and 'data/vectorizer.pkl' for evaluation and demo.")
+
