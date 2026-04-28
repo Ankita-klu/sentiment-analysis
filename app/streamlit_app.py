@@ -1,171 +1,235 @@
-import streamlit as st
-import pandas as pd
+import os
+import joblib
 import numpy as np
-from sklearn.metrics import classification_report, confusion_matrix, f1_score
+import pandas as pd
+import streamlit as st
 import matplotlib.pyplot as plt
 import seaborn as sns
+from sklearn.metrics import (
+    classification_report, confusion_matrix, f1_score, 
+    accuracy_score, roc_curve, auc
+)
+from sklearn.preprocessing import LabelBinarizer
 
 # ---------------------------------------------------------
 # Page Configuration
 # ---------------------------------------------------------
-# Set the page to wide mode to better accommodate dataframes and plots
-st.set_page_config(page_title="Sentiment Analysis Evaluation", layout="wide")
+# Configuring the Streamlit page settings for optimal visualization
+st.set_page_config(page_title="Twitter Sentiment Analysis Evaluation", layout="wide")
 
-st.title("Twitter Entity Sentiment Analysis - Evaluation Dashboard")
-st.write("This dashboard presents the evaluation metrics for the 4-class sentiment classification model.")
+st.title("Twitter Entity Sentiment Analysis - Final Evaluation")
+st.write("This dashboard presents the final performance metrics derived from the actual trained model and validation dataset.")
 st.markdown("---")
 
 # ---------------------------------------------------------
-# 1. Data Loading / Simulation Module
+# 0. Exploratory Data Analysis (Static Overviews)
 # ---------------------------------------------------------
-@st.cache_data
-def generate_dummy_data():
+# Displaying pre-generated EDA visualizations from the training phase
+st.header("0. Exploratory Data Analysis (EDA)")
+st.write("Overview of the training dataset characteristics provided by the Data & Modeling team.")
+
+# First row of EDA visualizations
+eda_col1, eda_col2 = st.columns(2)
+
+with eda_col1:
+    st.subheader("Class Distribution")
+    try:
+        st.image("data/class_distribution.png", caption="Sentiment class balance in the dataset", use_container_width=True)
+    except Exception:
+        st.warning("File 'class_distribution.png' not found in the data directory.")
+
+with eda_col2:
+    st.subheader("Word Cloud")
+    try:
+        st.image("data/wordclouds.png", caption="Most frequent words across sentiments", use_container_width=True)
+    except Exception:
+        st.warning("File 'wordclouds.png' not found in the data directory.")
+
+# Second row of EDA visualizations
+eda_col3, eda_col4 = st.columns(2)
+
+with eda_col3:
+    st.subheader("Tweet Length Distribution")
+    try:
+        st.image("data/tweet_length_distribution.png", caption="Distribution of tweet lengths by sentiment", use_container_width=True)
+    except Exception:
+        st.warning("File 'tweet_length_distribution.png' not found.")
+
+with eda_col4:
+    st.subheader("Top Topics and Entities")
+    try:
+        st.image("data/top_topics.png", caption="Most frequently discussed entities in the dataset", use_container_width=True)
+    except Exception:
+        st.warning("File 'top_topics.png' not found.")
+
+st.markdown("---")
+
+# ---------------------------------------------------------
+# 1. Core Model and Data Loading
+# ---------------------------------------------------------
+@st.cache_resource
+def load_final_assets():
     """
-    Generates simulated true labels and predicted labels to facilitate 
-    dashboard development before the final ML model is integrated.
-    The dummy data mimics a 4-class classification problem.
+    Loads the trained model and vectorizer using joblib.
+    Retrieves the validation dataset for performance assessment.
     """
-    categories = ['Negative', 'Neutral', 'Positive', 'Irrelevant']
-    n_samples = 300
-    
-    # Simulate a realistic distribution of true labels in the dataset
-    np.random.seed(42) # Ensuring reproducible results across app reloads
-    y_true = np.random.choice(categories, size=n_samples, p=[0.25, 0.35, 0.30, 0.10])
-    
-    # Simulate model predictions with a programmed error margin (approx. 80% accuracy)
-    y_pred = []
-    dummy_tweets = []
-    
-    for i, true_label in enumerate(y_true):
-        dummy_tweets.append(f"Simulated tweet content #{i} regarding a specific entity.")
+    try:
+        # Loading model components from the centralized data directory
+        model = joblib.load('data/best_model.pkl')
+        vectorizer = joblib.load('data/vectorizer.pkl')
         
-        if np.random.rand() > 0.20: 
-            y_pred.append(true_label)
+        # Loading the validation dataset from the application local directory
+        val_df = pd.read_csv('app/twitter_validation.csv', header=None)
+        val_df.columns = ['ID', 'Entity', 'True_Label', 'Tweet']
+        val_df = val_df.dropna(subset=['Tweet']) 
+        
+        return model, vectorizer, val_df
+    except Exception as e:
+        st.error(f"Critical Error loading project assets: {e}")
+        return None, None, None
+
+model, vectorizer, val_df = load_final_assets()
+
+if model and vectorizer and val_df is not None:
+    # ---------------------------------------------------------
+    # 2. Real-time Evaluation Pipeline
+    # ---------------------------------------------------------
+    # Processing the validation set through the inference pipeline
+    with st.spinner('Executing model inference on the validation set...'):
+        X_val = vectorizer.transform(val_df['Tweet'])
+        y_true = val_df['True_Label']
+        y_pred = model.predict(X_val)
+        
+        # Handling LinearSVC decision function vs probabilistic outputs
+        if hasattr(model, "predict_proba"):
+            y_scores = model.predict_proba(X_val)
         else:
-            # Randomly select an incorrect category if a simulated error occurs
-            wrong_categories = [c for c in categories if c != true_label]
-            y_pred.append(np.random.choice(wrong_categories))
+            y_scores = model.decision_function(X_val)
             
-    # Structure the simulated data into a pandas DataFrame
-    df = pd.DataFrame({
-        'Tweet': dummy_tweets,
-        'True_Label': y_true,
-        'Predicted_Label': y_pred
-    })
+        class_labels = sorted(y_true.unique())
+        val_df['Predicted_Label'] = y_pred
+
+    # ---------------------------------------------------------
+    # 3. Section 1: Core Performance Metrics
+    # ---------------------------------------------------------
+    st.header("1. Core Performance Metrics")
+    acc = accuracy_score(y_true, y_pred)
+    f1 = f1_score(y_true, y_pred, average='macro')
+
+    m_col1, m_col2, m_col3 = st.columns([1, 1, 2])
+    with m_col1:
+        st.metric("Top-1 Accuracy", f"{acc*100:.2f}%")
+    with m_col2:
+        st.metric("Macro F1 Score", f"{f1:.4f}")
+    with m_col3:
+        st.write("**Classification Report Summary**")
+        report = classification_report(y_true, y_pred, output_dict=True)
+        st.dataframe(pd.DataFrame(report).transpose().style.format("{:.2f}"), width='stretch')
+
+    # Displaying the historical model comparison results
+    st.markdown("### Model Selection (Training Phase)")
+    st.write("Performance benchmarks for different algorithms tested during the development phase.")
+    try:
+        st.image("data/model_comparison.png", caption="Comparative analysis of F1 Scores", width=600)
+    except Exception:
+        st.info("Model comparison visualization not available.")
+
+    st.markdown("---")
+
+    # ---------------------------------------------------------
+    # 4. Section 2 & 3: Model Diagnostics (Advanced Layout)
+    # ---------------------------------------------------------
+    st.header("2. Model Diagnostics")
+    st.write("Visual evaluation of model discrimination power and prediction overlaps.")
     
-    return df, categories
+    # Implementing a side-by-side layout for compact visualization
+    diag_col1, diag_col2 = st.columns(2)
+    
+    # Left column: ROC-AUC analysis
+    with diag_col1:
+        st.subheader("ROC-AUC Analysis")
+        lb = LabelBinarizer()
+        y_true_bin = lb.fit_transform(y_true)
+        
+        # Reduced figure size for optimal column fitting
+        fig_roc, ax_roc = plt.subplots(figsize=(8, 6))
+        for i, label in enumerate(lb.classes_):
+            fpr, tpr, _ = roc_curve(y_true_bin[:, i], y_scores[:, i])
+            roc_auc = auc(fpr, tpr)
+            ax_roc.plot(fpr, tpr, label=f'Class {label} (AUC = {roc_auc:.2f})')
+        
+        ax_roc.plot([0, 1], [0, 1], color='navy', linestyle='--')
+        ax_roc.set_xlabel('False Positive Rate')
+        ax_roc.set_ylabel('True Positive Rate')
+        ax_roc.legend(loc='lower right')
+        st.pyplot(fig_roc)
 
-# Execution of data generation
-data_df, class_labels = generate_dummy_data()
+    # Right column: Confusion matrix
+    with diag_col2:
+        st.subheader("Confusion Matrix Heatmap")
+        cm = confusion_matrix(y_true, y_pred, labels=class_labels)
+        
+        # Maintaining consistent height with the ROC curve
+        fig_cm, ax_cm = plt.subplots(figsize=(8, 6))
+        sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', 
+                    xticklabels=class_labels, yticklabels=class_labels, ax=ax_cm)
+        ax_cm.set_ylabel('Actual Category')
+        ax_cm.set_xlabel('Predicted Category')
+        st.pyplot(fig_cm)
 
-# Sidebar notification regarding development status
-st.sidebar.header("System Status")
-st.sidebar.warning("DEVELOPMENT MODE: Utilizing simulated dummy data. This module will be connected to actual CSV/Model outputs upon completion by the Modeling team.")
+    st.markdown("---")
 
-# ---------------------------------------------------------
-# 2. Advanced Evaluation Metrics Module
-# ---------------------------------------------------------
-from sklearn.metrics import accuracy_score
+    # ---------------------------------------------------------
+    # 5. Section 4: Qualitative Error Analysis
+    # ---------------------------------------------------------
+    st.header("3. Qualitative Error Analysis")
+    errors = val_df[val_df['True_Label'] != val_df['Predicted_Label']].copy()
+    
+    # Dictionary mapping error types to their NLP definitions
+    error_definitions = {
+        'Sarcasm': 'Instances where ironic context was misinterpreted.',
+        'Negation': 'Complex negative structures resulting in sentiment inversion.',
+        'Short Text': 'Brief tweets providing insufficient semantic context.',
+        'Entity Confusion': 'Sentiment incorrectly associated with the target entity.'
+    }
+    
+    st.write(f"Identified {len(errors)} misclassified samples. Review detailed logs below:")
+    st.dataframe(errors[['Entity', 'Tweet', 'True_Label', 'Predicted_Label']].head(10), width='stretch')
+    
+    st.markdown("### Technical Recommendations")
+    selected_pattern = st.selectbox("Select an observed error pattern for optimization strategies:", list(error_definitions.keys()))
+    st.info(f"Root Cause Analysis: {error_definitions[selected_pattern]}")
+    
+    # Generating dynamic recommendations based on error typology
+    if selected_pattern == 'Sarcasm':
+        st.warning("Actionable Insight: Transition to Transformer-based architectures (e.g., DistilBERT) to capture long-range bidirectional dependencies.")
+    elif selected_pattern == 'Negation':
+        st.warning("Actionable Insight: Implement higher-order n-grams (1, 3) to preserve local semantic negation structures.")
+    else:
+        st.success("Actionable Insight: Enhance the preprocessing pipeline to preserve emojis and domain-specific slang as critical sentiment indicators.")
 
-st.header("1. Core Performance Metrics")
-st.write("Quantitative analysis of model performance based on Kaggle standard metrics.")
+    st.markdown("---")
 
-# Calculate Top-1 Accuracy (Required by Kaggle dataset definition)
-top1_accuracy = accuracy_score(data_df['True_Label'], data_df['Predicted_Label'])
+    # ---------------------------------------------------------
+    # 6. Section 5: Interactive Live Predictor
+    # ---------------------------------------------------------
+    st.header("4. Interactive Live Predictor")
+    st.write("Deployment of the production model for real-time inference on arbitrary text inputs.")
+    
+    input_text = st.text_area("Input text for sentiment analysis:", placeholder="Type a tweet or review here...")
+    
+    if st.button("Evaluate Sentiment", type="primary"):
+        if input_text:
+            vec_input = vectorizer.transform([input_text])
+            live_pred = model.predict(vec_input)[0]
+            
+            # Supporting both probabilistic and decision-based classification metrics
+            if hasattr(model, "predict_proba"):
+                live_prob = max(model.predict_proba(vec_input)[0]) * 100
+                st.success(f"Predicted Sentiment: {live_pred} (Confidence: {live_prob:.2f}%)")
+            else:
+                live_score = max(model.decision_function(vec_input)[0])
+                st.success(f"Predicted Sentiment: {live_pred} (Decision Confidence Score: {live_score:.2f})")
 
-# Calculate Macro F1 Score
-macro_f1 = f1_score(data_df['True_Label'], data_df['Predicted_Label'], average='macro')
-
-# Display primary metrics using three columns for better layout
-col1, col2, col3 = st.columns([1, 1, 2])
-
-with col1:
-    st.metric(label="Top-1 Accuracy", value=f"{top1_accuracy * 100:.2f}%")
-    st.caption("Primary metric defined by Kaggle.")
-
-with col2:
-    st.metric(label="Macro F1 Score", value=f"{macro_f1:.4f}")
-    st.caption("Harmonic mean of precision and recall.")
-
-with col3:
-    st.write("**Detailed Classification Report**")
-    report_dict = classification_report(data_df['True_Label'], data_df['Predicted_Label'], output_dict=True)
-    report_df = pd.DataFrame(report_dict).transpose()
-    st.dataframe(report_df.style.format("{:.2f}"), width='stretch')
-
-st.markdown("---")
-
-# ---------------------------------------------------------
-# 2.1 ROC-AUC Curve Placeholder (Pending Probabilities)
-# ---------------------------------------------------------
-st.header("2. ROC-AUC Analysis")
-st.info("The ROC curve will be generated here once the Modeling team provides the prediction probabilities (predict_proba) alongside the class labels.")
-# Note: Actual ROC generation requires prediction probabilities, not just final class labels.
-# This section serves as a placeholder to ensure the evaluation framework is structurally complete.
-
-st.markdown("---")
-
-# ---------------------------------------------------------
-# 3. Confusion Matrix Module
-# ---------------------------------------------------------
-st.header("2. Confusion Matrix Heatmap")
-st.write("Visualizes classification overlaps. Diagonal axis indicates correct predictions.")
-
-# Computation of the confusion matrix array
-cm = confusion_matrix(data_df['True_Label'], data_df['Predicted_Label'], labels=class_labels)
-
-# Matplotlib/Seaborn rendering pipeline
-fig, ax = plt.subplots(figsize=(8, 6))
-sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', 
-            xticklabels=class_labels, yticklabels=class_labels, ax=ax)
-ax.set_ylabel('Actual Category (Ground Truth)')
-ax.set_xlabel('Predicted Category (Model Output)')
-ax.set_title('Confusion Matrix Visualization')
-
-st.pyplot(fig)
-
-st.markdown("---")
-
-# ---------------------------------------------------------
-# 4. Advanced Qualitative Error Analysis Module
-# ---------------------------------------------------------
-st.header("3. Diagnostic Error Analysis")
-st.write("This tool categorizes misclassifications to provide actionable feedback for the Data and Modeling teams.")
-
-# Isolate misclassified instances for detailed review
-misclassified_df = data_df[data_df['True_Label'] != data_df['Predicted_Label']].copy()
-
-# Simulate typical Twitter NLP error typologies for demonstration purposes
-error_archetypes = ['Sarcasm / Irony', 'Entity Confusion', 'Slang / Emoji Dropped', 'Double Negation']
-np.random.seed(10)
-misclassified_df['Probable_Error_Cause'] = np.random.choice(error_archetypes, size=len(misclassified_df))
-
-st.subheader("Error Distribution")
-# Aggregate and visualize the distribution of error typologies
-error_counts = misclassified_df['Probable_Error_Cause'].value_counts()
-st.bar_chart(error_counts)
-
-# Interactive workbench for targeted error investigation
-st.subheader("Interactive Investigation Workbench")
-selected_error_type = st.selectbox("Filter errors by suspected NLP challenge:", ['All'] + error_archetypes)
-
-# Apply dynamic filtering based on user selection
-if selected_error_type == 'All':
-    filtered_df = misclassified_df
 else:
-    filtered_df = misclassified_df[misclassified_df['Probable_Error_Cause'] == selected_error_type]
-
-st.dataframe(filtered_df[['Tweet', 'True_Label', 'Predicted_Label', 'Probable_Error_Cause']], width='stretch')
-
-# Dynamically generate architectural and preprocessing recommendations
-st.markdown("### Actionable Insights for the Team")
-if selected_error_type == 'Sarcasm / Irony':
-    st.warning("**To Modeling Team:** TF-IDF fails to capture the contrasting context of sarcasm. Consider transitioning to a transformer-based model (e.g., DistilBERT) to capture bidirectional context.")
-elif selected_error_type == 'Slang / Emoji Dropped':
-    st.warning("**To Data Team (Ankita):** Traditional regex cleaning might be erasing critical sentiment markers (emojis). Implement an emoji-to-text mapping step before tokenization.")
-elif selected_error_type == 'Entity Confusion':
-    st.warning("**To Modeling Team:** The model evaluates sentence-level sentiment instead of entity-level. Suggest extracting a text window (e.g., 5 words surrounding the target entity) for training.")
-elif selected_error_type == 'Double Negation':
-    st.warning("**To Modeling Team:** 'Not bad' is being tokenized into separate negative vectors. Increase the n-gram range in the vectorizer to include bi-grams (ngram_range=(1, 2)).")
-else:
-    st.info("Select a specific error type above to generate tailored architectural recommendations.")
+    st.error("System assets not found. Verify the presence of 'best_model.pkl' and 'vectorizer.pkl' in the data directory.")
