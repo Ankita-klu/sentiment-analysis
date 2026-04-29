@@ -1,7 +1,3 @@
-# ─────────────────────────────────────────────
-# Sentiment Analysis — Feature Engineering (Ngoc)
-# ─────────────────────────────────────────────
-
 from sklearn.feature_extraction.text import TfidfVectorizer
 import joblib
 
