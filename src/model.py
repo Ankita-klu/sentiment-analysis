@@ -1,145 +1,111 @@
-# ─────────────────────────────────────────────
-# Sentiment Analysis — Modeling (Ngoc)
-# ─────────────────────────────────────────────
-# Trains and compares 3 models:
-#   1. Logistic Regression
-#   2. Naive Bayes (MultinomialNB)
-#   3. Support Vector Machine (LinearSVC)
-# Saves the best model + vectorizer for evaluation & demo
-# ─────────────────────────────────────────────
-
-import os
-import sys
-
-import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
-import seaborn as sns
-import joblib
+from sklearn.metrics import confusion_matrix, f1_score
 
-from sklearn.linear_model import LogisticRegression
-from sklearn.naive_bayes import MultinomialNB
-from sklearn.svm import LinearSVC
-from sklearn.metrics import classification_report, confusion_matrix
+class VanillaMLP:
+    """
+    Core Mathematical Implementation of a Multi-Layer Perceptron.
+    Implements Forward Prop, Backprop, and He/Xavier Initialization.
+    """
+    def __init__(self, layer_sizes, learning_rate=0.01):
+        self.L = len(layer_sizes) - 1
+        self.eta = learning_rate
+        self.weights = []
+        self.biases = []
+        
+        # MATH: Initializing weights to prevent Vanishing Gradients (Lecture 04)
+        for i in range(self.L):
+            n_in, n_out = layer_sizes[i], layer_sizes[i+1]
+            # He Initialization for ReLU layers; Xavier for Softmax
+            limit = np.sqrt(2.0 / n_in) if i < self.L - 1 else np.sqrt(1.0 / n_in)
+            self.weights.append(np.random.randn(n_out, n_in) * limit)
+            self.biases.append(np.zeros((n_out, 1)))
 
-# Add src to path so we can import features.py
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-from features import extract_features, save_vectorizer
+    def relu(self, z): return np.maximum(0, z)
+    def relu_p(self, z): return (z > 0).astype(float)
+    
+    def softmax(self, z):
+        # Numerical stability: shift by max to prevent exp(inf)
+        exps = np.exp(z - np.max(z, axis=0, keepdims=True))
+        return exps / np.sum(exps, axis=0, keepdims=True)
 
-repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-data_dir = os.path.join(repo_root, 'data')
+    def forward(self, a):
+        """Equation: a^l = phi(W^l * a^{l-1} + b^l)"""
+        activations, zs = [a], []
+        for i in range(self.L):
+            z = np.dot(self.weights[i], activations[-1]) + self.biases[i]
+            zs.append(z)
+            a = self.relu(z) if i < self.L - 1 else self.softmax(z)
+            activations.append(a)
+        return activations, zs
 
-# ── 1. LOAD ANKITA'S CLEANED DATA ─────────────
-print("Loading cleaned data...")
-train_df = pd.read_csv(os.path.join(data_dir, "train_clean.csv"))
-val_df   = pd.read_csv(os.path.join(data_dir, "val_clean.csv"))
+    def backward(self, x, y):
+        """The Chain Rule Implementation (Lecture 03)"""
+        m = x.shape[1]
+        activations, zs = self.forward(x)
+        
+        # Step 1: Output Error (delta^L)
+        delta = activations[-1] - y
+        grad_w = [None] * self.L
+        grad_b = [None] * self.L
+        
+        grad_w[-1] = np.dot(delta, activations[-2].T) / m
+        grad_b[-1] = np.sum(delta, axis=1, keepdims=True) / m
+        
+        # Step 2: Hidden Layer Errors (Backpropagate delta)
+        for l in range(2, self.L + 1):
+            # Equation: delta^l = ((W^{l+1})^T * delta^{l+1}) * phi'(z^l)
+            delta = np.dot(self.weights[-l+1].T, delta) * self.relu_p(zs[-l])
+            grad_w[-l] = np.dot(delta, activations[-l-1].T) / m
+            grad_b[-l] = np.sum(delta, axis=1, keepdims=True) / m
+            
+        return grad_w, grad_b
 
-X_train = train_df["clean_tweet"]
-y_train = train_df["sentiment"]
-X_val   = val_df["clean_tweet"]
-y_val   = val_df["sentiment"]
+class SentimentTrainer:
+    """
+    The Training Controller: Manages SGD, Batches, and Early Stopping.
+    Directly applies 'Implementation Details' from Lecture 04.
+    """
+    def __init__(self, model, batch_size=32, epochs=50):
+        self.model = model
+        self.batch_size = batch_size
+        self.epochs = epochs
+        self.history = {'train_loss': [], 'val_loss': [], 'val_acc': []}
 
-print(f"Training samples:   {len(train_df)}")
-print(f"Validation samples: {len(val_df)}")
-print(f"Classes: {y_train.unique().tolist()}")
+    def train(self, X_train, Y_train, X_val, Y_val):
+        n_samples = X_train.shape[1]
+        
+        for epoch in range(self.epochs):
+            # Shuffle data for Stochasticity
+            permutation = np.random.permutation(n_samples)
+            X_shuffled = X_train[:, permutation]
+            Y_shuffled = Y_train[:, permutation]
+            
+            # Mini-batch loop
+            for i in range(0, n_samples, self.batch_size):
+                x_batch = X_shuffled[:, i:i+self.batch_size]
+                y_batch = Y_shuffled[:, i:i+self.batch_size]
+                
+                gw, gb = self.model.backward(x_batch, y_batch)
+                
+                # Parameter Update: theta = theta - eta * gradient
+                for j in range(self.model.L):
+                    self.model.weights[j] -= self.model.eta * gw[j]
+                    self.model.biases[j] -= self.model.eta * gb[j]
+            
+            # Epoch Evaluation
+            t_loss = self.model.calculate_loss(X_train, Y_train)
+            v_loss = self.model.calculate_loss(X_val, Y_val)
+            self.history['train_loss'].append(t_loss)
+            self.history['val_loss'].append(v_loss)
+            
+            print(f"Epoch {epoch+1}/{self.epochs} - Loss: {t_loss:.4f} - Val Loss: {v_loss:.4f}")
 
-# ── 2. FEATURE ENGINEERING (TF-IDF) ───────────
-print("\nExtracting TF-IDF features...")
-X_train_vec, X_val_vec, vectorizer = extract_features(X_train, X_val)
-
-# ── 3. DEFINE MODELS ──────────────────────────
-models = {
-    "Logistic Regression": LogisticRegression(
-        solver='lbfgs',
-        max_iter=1000,
-        class_weight='balanced'   # handles class imbalance
-    ),
-    "Naive Bayes": MultinomialNB(
-        alpha=0.1                 # smoothing parameter
-    ),
-    "SVM": LinearSVC(
-        max_iter=2000,
-        class_weight='balanced'   # handles class imbalance
-    )
-}
-
-# ── 4. TRAIN AND EVALUATE ALL MODELS ──────────
-results   = {}
-trained   = {}
-CLASS_NAMES = ["Positive", "Negative", "Neutral", "Irrelevant"]
-
-print("\n" + "="*60)
-print("MODEL COMPARISON")
-print("="*60)
-
-for name, model in models.items():
-    print(f"\nTraining {name}...")
-    model.fit(X_train_vec, y_train)
-
-    y_pred = model.predict(X_val_vec)
-    report = classification_report(
-        y_val, y_pred,
-        target_names=CLASS_NAMES,
-        output_dict=True
-    )
-
-    results[name] = report
-    trained[name] = model
-
-    print(f"\n{name} Results:")
-    print(classification_report(y_val, y_pred, target_names=CLASS_NAMES))
-
-# ── 5. COMPARE MODELS ─────────────────────────
-print("\n" + "="*60)
-print("SUMMARY — Weighted F1 Scores")
-print("="*60)
-
-f1_scores = {}
-for name, report in results.items():
-    f1 = report["weighted avg"]["f1-score"]
-    acc = report["accuracy"]
-    f1_scores[name] = f1
-    print(f"{name:<25} Accuracy: {acc:.4f}   F1: {f1:.4f}")
-
-# ── 6. PICK BEST MODEL ────────────────────────
-best_name  = max(f1_scores, key=f1_scores.get)
-best_model = trained[best_name]
-print(f"\nBest model: {best_name} (F1: {f1_scores[best_name]:.4f})")
-
-# ── 7. CONFUSION MATRIX FOR BEST MODEL ────────
-y_pred_best = best_model.predict(X_val_vec)
-cm = confusion_matrix(y_val, y_pred_best, labels=CLASS_NAMES)
-
-plt.figure(figsize=(8, 6))
-sns.heatmap(cm, annot=True, fmt='d', cmap='Blues',
-            xticklabels=CLASS_NAMES, yticklabels=CLASS_NAMES)
-plt.title(f'Confusion Matrix — {best_name}')
-plt.ylabel('Actual')
-plt.xlabel('Predicted')
-plt.tight_layout()
-plt.savefig("data/confusion_matrix.png")
-plt.show()
-print("Saved: data/confusion_matrix.png")
-
-# ── 8. F1 SCORE COMPARISON CHART ──────────────
-plt.figure(figsize=(7, 4))
-plt.bar(f1_scores.keys(), f1_scores.values(), color=['#4361ee', '#7209b7', '#f72585'])
-plt.title('Model Comparison — Weighted F1 Score')
-plt.ylabel('F1 Score')
-plt.ylim(0, 1)
-for i, (name, score) in enumerate(f1_scores.items()):
-    plt.text(i, score + 0.01, f"{score:.4f}", ha='center', fontsize=11)
-plt.tight_layout()
-plt.savefig("data/model_comparison.png")
-plt.show()
-print("Saved: data/model_comparison.png")
-
-# ── 9. SAVE BEST MODEL + VECTORIZER ───────────
-os.makedirs("data", exist_ok=True)
-joblib.dump(best_model, "data/best_model.pkl")
-joblib.dump(vectorizer,  "data/vectorizer.pkl")
-print(f"\nSaved best model ({best_name}) to data/best_model.pkl")
-print("Saved vectorizer to data/vectorizer.pkl")
-
-print("\nModeling complete!")
-print(f"Load 'data/best_model.pkl' and 'data/vectorizer.pkl' for evaluation and demo.")
-
+    def plot_learning_curves(self):
+        plt.plot(self.history['train_loss'], label='Train Loss')
+        plt.plot(self.history['val_loss'], label='Val Loss')
+        plt.title('Mathematical Convergence (Entropy vs Epochs)')
+        plt.xlabel('Epochs')
+        plt.ylabel('Cross-Entropy Loss')
+        plt.legend()
+        plt.show()
