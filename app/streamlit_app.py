@@ -74,23 +74,15 @@ def load_final_assets():
     Retrieves the validation dataset for performance assessment.
     """
     try:
-        repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-        data_dir = os.path.join(repo_root, 'data')
-
         # Loading model components from the centralized data directory
-        model = joblib.load(os.path.join(data_dir, 'best_model.pkl'))
-        vectorizer = joblib.load(os.path.join(data_dir, 'vectorizer.pkl'))
-
-        # Loading the validation dataset from the preprocessed data directory
-        val_df = pd.read_csv(os.path.join(data_dir, 'val_clean.csv'))
-        val_df = val_df.dropna(subset=['clean_tweet'])
-        val_df.rename(columns={
-            'tweet_id': 'ID',
-            'topic': 'Entity',
-            'sentiment': 'True_Label',
-            'tweet': 'Tweet'
-        }, inplace=True)
-
+        model = joblib.load('data/best_model.pkl')
+        vectorizer = joblib.load('data/vectorizer.pkl')
+        
+        # Loading the validation dataset from the application local directory
+        val_df = pd.read_csv('app/twitter_validation.csv', header=None)
+        val_df.columns = ['ID', 'Entity', 'True_Label', 'Tweet']
+        val_df = val_df.dropna(subset=['Tweet']) 
+        
         return model, vectorizer, val_df
     except Exception as e:
         st.error(f"Critical Error loading project assets: {e}")
@@ -104,7 +96,7 @@ if model and vectorizer and val_df is not None:
     # ---------------------------------------------------------
     # Processing the validation set through the inference pipeline
     with st.spinner('Executing model inference on the validation set...'):
-        X_val = vectorizer.transform(val_df['clean_tweet'])
+        X_val = vectorizer.transform(val_df['Tweet'])
         y_true = val_df['True_Label']
         y_pred = model.predict(X_val)
         
