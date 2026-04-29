@@ -1,6 +1,4 @@
 # ─────────────────────────────────────────────
-# Sentiment Analysis — Modeling (Ngoc)
-# ─────────────────────────────────────────────
 # Trains and compares 3 models:
 #   1. Logistic Regression
 #   2. Naive Bayes (MultinomialNB)
