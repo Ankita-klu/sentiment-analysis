@@ -1,17 +1,73 @@
-# Pseudocode structure:
+"""Custom TF-IDF Vectorizer (no sklearn!)"""
+import numpy as np
+from collections import defaultdict
+
 class TFIDFVectorizer:
+    """Custom TF-IDF: Transform text to numbers"""
+    
+    def __init__(self, max_features=5000, min_df=2):
+        self.max_features = max_features
+        self.min_df = min_df
+        self.vocab = {}
+        self.idf_weights = None
+    
     def fit(self, documents):
-        """Build vocabulary and compute IDF weights"""
-        # 1. Tokenize all documents
-        # 2. Build vocab (term → index mapping)
-        # 3. Count document frequencies df(t)
-        # 4. Compute IDF: idf[t] = log(N / (1 + df[t]))
+        """Learn vocabulary and IDF weights"""
+        documents = list(documents)  # Convert to list
+        term_frequencies = defaultdict(int)
+        num_docs = len(documents)
         
+        for doc in documents:
+            terms = set(str(doc).lower().split())
+            for term in terms:
+                term_frequencies[term] += 1
+        
+        # Keep most frequent terms
+        sorted_terms = sorted(
+            [(t, f) for t, f in term_frequencies.items() if f >= self.min_df],
+            key=lambda x: x[1], reverse=True
+        )[:self.max_features]
+        
+        self.vocab = {term: idx for idx, (term, _) in enumerate(sorted_terms)}
+        
+        # Compute IDF weights
+        self.idf_weights = np.zeros(len(self.vocab))
+        for term, idx in self.vocab.items():
+            df = term_frequencies[term]
+            self.idf_weights[idx] = np.log((num_docs + 1) / (1 + df))
+        
+        return self
+    
     def transform(self, documents):
-        """Convert documents to sparse TF-IDF matrix"""
-        # For each document:
-        #   1. Tokenize
-        #   2. Compute TF: tf[t] = count(t) / len(doc)
-        #   3. Multiply: tfidf[t] = tf[t] * idf[t]
-        #   4. Normalize: divide by L2 norm
-        # Output: (n_samples, n_features) sparse matrix
+        """Convert documents to TF-IDF vectors"""
+        documents = list(documents)  # Convert to list
+        n_docs = len(documents)
+        n_features = len(self.vocab)
+        
+        if n_features == 0:
+            return np.zeros((n_docs, 1))
+        
+        matrix = np.zeros((n_docs, n_features))
+        
+        for doc_idx, doc in enumerate(documents):
+            terms = str(doc).lower().split()
+            term_counts = defaultdict(int)
+            for term in terms:
+                if term in self.vocab:
+                    term_counts[term] += 1
+            
+            if len(terms) > 0:
+                for term, count in term_counts.items():
+                    idx = self.vocab[term]
+                    tf = count / len(terms)
+                    matrix[doc_idx, idx] = tf * self.idf_weights[idx]
+                
+                # Normalize
+                norm = np.linalg.norm(matrix[doc_idx])
+                if norm > 0:
+                    matrix[doc_idx] /= norm
+        
+        return matrix
+    
+    def fit_transform(self, documents):
+        return self.fit(documents).transform(documents)
