@@ -1,4 +1,14 @@
+# ─────────────────────────────────────────────
+# Trains and compares 3 models:
+#   1. Logistic Regression
+#   2. Naive Bayes (MultinomialNB)
+#   3. Support Vector Machine (LinearSVC)
+# Saves the best model + vectorizer for evaluation & demo
+# ─────────────────────────────────────────────
+
 import os
+import sys
+
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -9,6 +19,8 @@ from sklearn.naive_bayes import MultinomialNB
 from sklearn.svm import LinearSVC
 from sklearn.metrics import classification_report, confusion_matrix
 
+# Add src to path so we can import features.py
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from features import extract_features, save_vectorizer
 
 repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -18,10 +30,6 @@ data_dir = os.path.join(repo_root, 'data')
 print("Loading cleaned data...")
 train_df = pd.read_csv(os.path.join(data_dir, "train_clean.csv"))
 val_df   = pd.read_csv(os.path.join(data_dir, "val_clean.csv"))
-
-# Fill any remaining NaN values just in case
-train_df["clean_tweet"] = train_df["clean_tweet"].fillna("")
-val_df["clean_tweet"]   = val_df["clean_tweet"].fillna("")
 
 X_train = train_df["clean_tweet"]
 y_train = train_df["sentiment"]
@@ -132,3 +140,4 @@ print("Saved vectorizer to data/vectorizer.pkl")
 
 print("\nModeling complete!")
 print(f"Load 'data/best_model.pkl' and 'data/vectorizer.pkl' for evaluation and demo.")
+
