@@ -6,9 +6,12 @@ from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 
 # Download required NLTK data
-nltk.download("stopwords")
-nltk.download("wordnet")
-nltk.download("omw-1.4")
+try:
+    nltk.data.find('corpora/stopwords')
+except LookupError:
+    nltk.download('stopwords', quiet=True)
+    nltk.download('wordnet', quiet=True)
+
 
 # 1. LOAD DATA 
 train_df = pd.read_csv(r"D:\2_Study\2_Study Abroad\Master\KLU\Courses\ML_DL\Twitter Sentiment analysis\twitter_training.csv", header=None)
