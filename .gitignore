@@ -6,3 +6,4 @@ __pycache__/
 data/train_clean.csv
 data/val_clean.csv
 data/raw/
+archive/
