@@ -1,13 +1,5 @@
 import sys
 import os
-
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DATA_DIR = os.path.join(BASE_DIR, 'data')
-sys.path.insert(0, BASE_DIR)  # allows 'from src.mlp import ...' to work
-
-import joblib
-
-
 import joblib
 import numpy as np
 import pandas as pd
@@ -20,12 +12,16 @@ from sklearn.metrics import (
 )
 from sklearn.preprocessing import LabelBinarizer
 
-
+# ---------------------------------------------------------
+# Path Configuration
+# ---------------------------------------------------------
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DATA_DIR = os.path.join(BASE_DIR, 'data')
+sys.path.insert(0, BASE_DIR)  # allows 'from src.mlp import ...' to work
 
 # ---------------------------------------------------------
 # Page Configuration
 # ---------------------------------------------------------
-# Configuring the Streamlit page settings for optimal visualization
 st.set_page_config(page_title="Twitter Sentiment Analysis Evaluation", layout="wide")
 
 st.title("Twitter Entity Sentiment Analysis - Final Evaluation")
@@ -35,41 +31,38 @@ st.markdown("---")
 # ---------------------------------------------------------
 # 0. Exploratory Data Analysis (Static Overviews)
 # ---------------------------------------------------------
-# Displaying pre-generated EDA visualizations from the training phase
 st.header("0. Exploratory Data Analysis (EDA)")
 st.write("Overview of the training dataset characteristics provided by the Data & Modeling team.")
 
-# First row of EDA visualizations
 eda_col1, eda_col2 = st.columns(2)
 
 with eda_col1:
     st.subheader("Class Distribution")
     try:
-        st.image(os.path.join(DATA_DIR, "class_distribution.png") , caption="Sentiment class balance in the dataset", width='stretch')
+        st.image(os.path.join(DATA_DIR, "class_distribution.png"), caption="Sentiment class balance in the dataset", use_container_width=True)
     except Exception:
         st.warning("File 'class_distribution.png' not found in the data directory.")
 
 with eda_col2:
     st.subheader("Word Cloud")
     try:
-        st.image(os.path.join(DATA_DIR, "wordclouds.png" ), caption="Most frequent words across sentiments", width='stretch')
+        st.image(os.path.join(DATA_DIR, "wordclouds.png"), caption="Most frequent words across sentiments", use_container_width=True)
     except Exception:
         st.warning("File 'wordclouds.png' not found in the data directory.")
 
-# Second row of EDA visualizations
 eda_col3, eda_col4 = st.columns(2)
 
 with eda_col3:
     st.subheader("Tweet Length Distribution")
     try:
-        st.image(os.path.join(DATA_DIR, "tweet_length_distribution.png" ), caption="Distribution of tweet lengths by sentiment", width='stretch')
+        st.image(os.path.join(DATA_DIR, "tweet_length_distribution.png"), caption="Distribution of tweet lengths by sentiment", use_container_width=True)
     except Exception:
         st.warning("File 'tweet_length_distribution.png' not found.")
 
 with eda_col4:
     st.subheader("Top Topics and Entities")
     try:
-        st.image(os.path.join(DATA_DIR, "top_topics.png"), caption="Most frequently discussed entities in the dataset", width='stretch')
+        st.image(os.path.join(DATA_DIR, "top_topics.png"), caption="Most frequently discussed entities in the dataset", use_container_width=True)
     except Exception:
         st.warning("File 'top_topics.png' not found.")
 
@@ -88,8 +81,9 @@ def load_final_assets():
         # Loading model components from the centralized data directory
         model = joblib.load(os.path.join(DATA_DIR, 'best_model.pkl'))
         vectorizer = joblib.load(os.path.join(DATA_DIR, 'vectorizer.pkl'))
-        # after
-        val_df = pd.read_csv(os.path.join(DATA_DIR, 'val_clean.csv'))
+        
+        # Loading the validation dataset from the processed data directory
+        val_df = pd.read_csv(os.path.join(DATA_DIR, 'processed', 'val_clean.csv'))
         val_df = val_df.rename(columns={'sentiment': 'True_Label', 'clean_tweet': 'Tweet'})
         val_df = val_df.dropna(subset=['Tweet'])
                 
@@ -104,16 +98,15 @@ if model and vectorizer and val_df is not None:
     # ---------------------------------------------------------
     # 2. Real-time Evaluation Pipeline
     # ---------------------------------------------------------
-    # Processing the validation set through the inference pipeline
     with st.spinner('Executing model inference on the validation set...'):
         X_val = vectorizer.transform(val_df['Tweet'])
         y_true = val_df['True_Label']
         y_pred = model.predict(X_val)
 
         label_map = {0: 'Positive', 1: 'Negative', 2: 'Neutral', 3: 'Irrelevant'}
-        y_pred = np.array([label_map[i] for i in y_pred])
+        # Graceful fallback in case the model outputs strings directly instead of integers
+        y_pred = np.array([label_map.get(i, i) for i in y_pred])
         
-        # Handling LinearSVC decision function vs probabilistic outputs
         if hasattr(model, "predict_proba"):
             y_scores = model.predict_proba(X_val)
         else:
@@ -137,34 +130,30 @@ if model and vectorizer and val_df is not None:
     with m_col3:
         st.write("**Classification Report Summary**")
         report = classification_report(y_true, y_pred, output_dict=True)
-        st.dataframe(pd.DataFrame(report).transpose().style.format("{:.2f}"), width='stretch')
+        st.dataframe(pd.DataFrame(report).transpose().style.format("{:.2f}"), use_container_width=True)
 
-    # Displaying the historical model comparison results
     st.markdown("### Model Selection (Training Phase)")
     st.write("Performance benchmarks for different algorithms tested during the development phase.")
     try:
-        st.image(os.path.join(DATA_DIR, "model_comparison.png" ), caption="Comparative analysis of F1 Scores", width=600)
+        st.image(os.path.join(DATA_DIR, "model_comparison.png"), caption="Comparative analysis of F1 Scores", width=600)
     except Exception:
         st.info("Model comparison visualization not available.")
 
     st.markdown("---")
 
     # ---------------------------------------------------------
-    # 4. Section 2 & 3: Model Diagnostics (Advanced Layout)
+    # 4. Section 2 & 3: Model Diagnostics
     # ---------------------------------------------------------
     st.header("2. Model Diagnostics")
     st.write("Visual evaluation of model discrimination power and prediction overlaps.")
     
-    # Implementing a side-by-side layout for compact visualization
     diag_col1, diag_col2 = st.columns(2)
     
-    # Left column: ROC-AUC analysis
     with diag_col1:
         st.subheader("ROC-AUC Analysis")
         lb = LabelBinarizer()
         y_true_bin = lb.fit_transform(y_true)
         
-        # Reduced figure size for optimal column fitting
         fig_roc, ax_roc = plt.subplots(figsize=(8, 6))
         for i, label in enumerate(lb.classes_):
             fpr, tpr, _ = roc_curve(y_true_bin[:, i], y_scores[:, i])
@@ -177,12 +166,10 @@ if model and vectorizer and val_df is not None:
         ax_roc.legend(loc='lower right')
         st.pyplot(fig_roc)
 
-    # Right column: Confusion matrix
     with diag_col2:
         st.subheader("Confusion Matrix Heatmap")
         cm = confusion_matrix(y_true, y_pred, labels=class_labels)
         
-        # Maintaining consistent height with the ROC curve
         fig_cm, ax_cm = plt.subplots(figsize=(8, 6))
         sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', 
                     xticklabels=class_labels, yticklabels=class_labels, ax=ax_cm)
@@ -198,7 +185,6 @@ if model and vectorizer and val_df is not None:
     st.header("3. Qualitative Error Analysis")
     errors = val_df[val_df['True_Label'] != val_df['Predicted_Label']].copy()
     
-    # Dictionary mapping error types to their NLP definitions
     error_definitions = {
         'Sarcasm': 'Instances where ironic context was misinterpreted.',
         'Negation': 'Complex negative structures resulting in sentiment inversion.',
@@ -207,12 +193,12 @@ if model and vectorizer and val_df is not None:
     }
     
     st.write(f"Identified {len(errors)} misclassified samples. Review detailed logs below:")
-    st.dataframe(errors[['Tweet', 'True_Label', 'Predicted_Label']].head(10), width='stretch')    
+    st.dataframe(errors[['Tweet', 'True_Label', 'Predicted_Label']].head(10), use_container_width=True)    
+    
     st.markdown("### Technical Recommendations")
     selected_pattern = st.selectbox("Select an observed error pattern for optimization strategies:", list(error_definitions.keys()))
     st.info(f"Root Cause Analysis: {error_definitions[selected_pattern]}")
     
-    # Generating dynamic recommendations based on error typology
     if selected_pattern == 'Sarcasm':
         st.warning("Actionable Insight: Transition to Transformer-based architectures (e.g., DistilBERT) to capture long-range bidirectional dependencies.")
     elif selected_pattern == 'Negation':
@@ -233,9 +219,9 @@ if model and vectorizer and val_df is not None:
     if st.button("Evaluate Sentiment", type="primary"):
         if input_text:
             vec_input = vectorizer.transform([input_text])
-            live_pred = label_map[model.predict(vec_input)[0]]
+            raw_pred = model.predict(vec_input)[0]
+            live_pred = label_map.get(raw_pred, raw_pred)
             
-            # Supporting both probabilistic and decision-based classification metrics
             if hasattr(model, "predict_proba"):
                 live_prob = max(model.predict_proba(vec_input)[0]) * 100
                 st.success(f"Predicted Sentiment: {live_pred} (Confidence: {live_prob:.2f}%)")

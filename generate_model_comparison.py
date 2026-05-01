@@ -19,8 +19,8 @@ import numpy as np
 import pickle
 
 # Load data
-train_df = pd.read_csv(os.path.join(DATA_DIR, 'train_clean.csv')).fillna('')
-val_df   = pd.read_csv(os.path.join(DATA_DIR, 'val_clean.csv')).fillna('')
+train_df = pd.read_csv(os.path.join(DATA_DIR, 'processed', 'train_clean.csv')).fillna('')
+val_df   = pd.read_csv(os.path.join(DATA_DIR, 'processed', 'val_clean.csv')).fillna('')
 
 X_train_raw = train_df['clean_tweet']
 y_train     = train_df['sentiment']

@@ -9,8 +9,8 @@ from src.vectorizer import TFIDFVectorizer
 from src.mlp import MLPClassifier
 from src.utils import one_hot_encode, accuracy
 
-df_train = pd.read_csv('data/train_clean.csv')
-df_val = pd.read_csv('data/val_clean.csv')
+df_train = pd.read_csv('data/processed/train_clean.csv')
+df_val = pd.read_csv('data/processed/val_clean.csv')
 
 df_train = df_train.dropna(subset=['clean_tweet'])
 df_val = df_val.dropna(subset=['clean_tweet'])
