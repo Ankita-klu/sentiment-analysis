@@ -1,3 +1,5 @@
+from src.mlp import cross_entropy_loss
+import matplotlib.pyplot as plt  
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import pickle
@@ -36,6 +38,9 @@ print("Training on full dataset...\n")
 best_acc = 0
 best_model_weights = None
 
+train_losses = []
+val_losses = []
+
 
 for epoch in range(50):
     m = X_train.shape[0]
@@ -48,6 +53,14 @@ for epoch in range(50):
         
         model.forward(X_batch)
         model.backward(y_batch, lr=0.001)
+
+    model.forward(X_train)
+    train_loss = cross_entropy_loss(model.predictions, y_train)
+    train_losses.append(train_loss)
+
+    model.forward(X_val)
+    val_loss = cross_entropy_loss(model.predictions, y_val)
+    val_losses.append(val_loss)
     
     pred_val = model.predict(X_val)
     val_acc = np.mean(pred_val == y_val_labels)
@@ -71,6 +84,17 @@ print(f"\nFinal Accuracy: {best_acc:.4f}")
 # after
 model.set_weights(best_model_weights)
 # model.biases  = best_model_biases
+
+plt.figure(figsize=(10, 5))
+plt.plot(train_losses, label='Train Loss')
+plt.plot(val_losses, label='Val Loss')
+plt.xlabel('Epoch')
+plt.ylabel('Cross-Entropy Loss')
+plt.title('Training Progress — Early Stopping Point Visible')
+plt.legend()
+plt.tight_layout()
+plt.savefig('data/training_progress.png')
+print("Saved: data/training_progress.png")
 
 # Save to data/ so the Streamlit app can find them
 os.makedirs('data', exist_ok=True)

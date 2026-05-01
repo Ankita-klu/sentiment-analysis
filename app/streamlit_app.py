@@ -39,14 +39,14 @@ eda_col1, eda_col2 = st.columns(2)
 with eda_col1:
     st.subheader("Class Distribution")
     try:
-        st.image(os.path.join(DATA_DIR, "class_distribution.png"), caption="Sentiment class balance in the dataset", use_container_width=True)
+        st.image(os.path.join(DATA_DIR, "class_distribution.png"), caption="Sentiment class balance in the dataset", width='stretch')
     except Exception:
         st.warning("File 'class_distribution.png' not found in the data directory.")
 
 with eda_col2:
     st.subheader("Word Cloud")
     try:
-        st.image(os.path.join(DATA_DIR, "wordclouds.png"), caption="Most frequent words across sentiments", use_container_width=True)
+        st.image(os.path.join(DATA_DIR, "wordclouds.png"), caption="Most frequent words across sentiments", width='stretch')
     except Exception:
         st.warning("File 'wordclouds.png' not found in the data directory.")
 
@@ -55,14 +55,14 @@ eda_col3, eda_col4 = st.columns(2)
 with eda_col3:
     st.subheader("Tweet Length Distribution")
     try:
-        st.image(os.path.join(DATA_DIR, "tweet_length_distribution.png"), caption="Distribution of tweet lengths by sentiment", use_container_width=True)
+        st.image(os.path.join(DATA_DIR, "tweet_length_distribution.png"), caption="Distribution of tweet lengths by sentiment", width='stretch')
     except Exception:
         st.warning("File 'tweet_length_distribution.png' not found.")
 
 with eda_col4:
     st.subheader("Top Topics and Entities")
     try:
-        st.image(os.path.join(DATA_DIR, "top_topics.png"), caption="Most frequently discussed entities in the dataset", use_container_width=True)
+        st.image(os.path.join(DATA_DIR, "top_topics.png"), caption="Most frequently discussed entities in the dataset", width='stretch')
     except Exception:
         st.warning("File 'top_topics.png' not found.")
 
@@ -130,7 +130,7 @@ if model and vectorizer and val_df is not None:
     with m_col3:
         st.write("**Classification Report Summary**")
         report = classification_report(y_true, y_pred, output_dict=True)
-        st.dataframe(pd.DataFrame(report).transpose().style.format("{:.2f}"), use_container_width=True)
+        st.dataframe(pd.DataFrame(report).transpose().style.format("{:.2f}"), width='stretch')
 
     st.markdown("### Model Selection (Training Phase)")
     st.write("Performance benchmarks for different algorithms tested during the development phase.")
@@ -138,6 +138,15 @@ if model and vectorizer and val_df is not None:
         st.image(os.path.join(DATA_DIR, "model_comparison.png"), caption="Comparative analysis of F1 Scores", width=600)
     except Exception:
         st.info("Model comparison visualization not available.")
+
+    # ── ADD: training progress chart ──────────────────
+    st.markdown("### Training Progress")
+    st.write("Train vs validation loss over epochs — the gap indicates overfitting, the optimal stopping point is where val loss is lowest.")
+    try:
+        st.image(os.path.join(DATA_DIR, "training_progress.png"), caption="Train vs Validation Loss", width='stretch')
+    except Exception:
+        st.info("Training progress chart not available. Re-run train.py to generate.")
+    # ──────────────────────────────────────────────────
 
     st.markdown("---")
 
@@ -193,7 +202,7 @@ if model and vectorizer and val_df is not None:
     }
     
     st.write(f"Identified {len(errors)} misclassified samples. Review detailed logs below:")
-    st.dataframe(errors[['Tweet', 'True_Label', 'Predicted_Label']].head(10), use_container_width=True)    
+    st.dataframe(errors[['Tweet', 'True_Label', 'Predicted_Label']].head(10), width='stretch')    
     
     st.markdown("### Technical Recommendations")
     selected_pattern = st.selectbox("Select an observed error pattern for optimization strategies:", list(error_definitions.keys()))
