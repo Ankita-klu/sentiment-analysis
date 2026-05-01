@@ -1,4 +1,4 @@
-
+import os
 import re
 import pandas as pd
 import nltk
@@ -13,9 +13,13 @@ except LookupError:
     nltk.download('wordnet', quiet=True)
 
 
-# 1. LOAD DATA 
-train_df = pd.read_csv(r"D:\2_Study\2_Study Abroad\Master\KLU\Courses\ML_DL\Twitter Sentiment analysis\twitter_training.csv", header=None)
-val_df   = pd.read_csv(r"D:\2_Study\2_Study Abroad\Master\KLU\Courses\ML_DL\Twitter Sentiment analysis\twitter_validation.csv", header=None)
+
+# Resolve paths relative to this file so the script works from any directory
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+# 1. LOAD DATA
+train_df = pd.read_csv(os.path.join(BASE_DIR, "data", "raw", "twitter_training.csv"), header=None)
+val_df   = pd.read_csv(os.path.join(BASE_DIR, "data", "raw", "twitter_validation.csv"), header=None)
 
 train_df.columns = ["tweet_id", "topic", "sentiment", "tweet"]
 val_df.columns   = ["tweet_id", "topic", "sentiment", "tweet"]
@@ -72,11 +76,14 @@ for i in range(3):
     print(f"\nOriginal : {train_df['tweet'].iloc[i]}")
     print(f"Cleaned  : {train_df['clean_tweet'].iloc[i]}")
 
-#  5. SAVE CLEANED DATA 
-train_df.to_csv("data/train_clean.csv", index=False)
-val_df.to_csv("data/val_clean.csv", index=False)
+# 5. SAVE CLEANED DATA
+out_train = os.path.join(BASE_DIR, "data", "train_clean.csv")
+out_val   = os.path.join(BASE_DIR, "data", "val_clean.csv")
 
-print("\nSaved cleaned data:")
-print("  data/train_clean.csv")
-print("  data/val_clean.csv")
+train_df.to_csv(out_train, index=False)
+val_df.to_csv(out_val, index=False)
+
+print(f"\nSaved: {out_train}")
+print(f"Saved: {out_val}")
 print("\nPreprocessing complete!")
+

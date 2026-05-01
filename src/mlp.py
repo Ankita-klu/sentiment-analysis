@@ -129,6 +129,11 @@ class MLPClassifier:
         probs = self.forward(X)
         return np.argmax(probs, axis=1)
     
+    def predict_proba(self, X):
+        """Return softmax probabilities (used for ROC-AUC and confidence scores)"""
+        
+        return self.forward(X)
+        
     def get_weights(self):
         """
         Return deep copy of weights

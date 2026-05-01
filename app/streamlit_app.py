@@ -1,4 +1,13 @@
+import sys
 import os
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DATA_DIR = os.path.join(BASE_DIR, 'data')
+sys.path.insert(0, BASE_DIR)  # allows 'from src.mlp import ...' to work
+
+import joblib
+
+
 import joblib
 import numpy as np
 import pandas as pd
@@ -10,6 +19,8 @@ from sklearn.metrics import (
     accuracy_score, roc_curve, auc
 )
 from sklearn.preprocessing import LabelBinarizer
+
+
 
 # ---------------------------------------------------------
 # Page Configuration
@@ -34,14 +45,14 @@ eda_col1, eda_col2 = st.columns(2)
 with eda_col1:
     st.subheader("Class Distribution")
     try:
-        st.image("data/class_distribution.png", caption="Sentiment class balance in the dataset", use_container_width=True)
+        st.image(os.path.join(DATA_DIR, "class_distribution.png") , caption="Sentiment class balance in the dataset", width='stretch')
     except Exception:
         st.warning("File 'class_distribution.png' not found in the data directory.")
 
 with eda_col2:
     st.subheader("Word Cloud")
     try:
-        st.image("data/wordclouds.png", caption="Most frequent words across sentiments", use_container_width=True)
+        st.image(os.path.join(DATA_DIR, "wordclouds.png" ), caption="Most frequent words across sentiments", width='stretch')
     except Exception:
         st.warning("File 'wordclouds.png' not found in the data directory.")
 
@@ -51,14 +62,14 @@ eda_col3, eda_col4 = st.columns(2)
 with eda_col3:
     st.subheader("Tweet Length Distribution")
     try:
-        st.image("data/tweet_length_distribution.png", caption="Distribution of tweet lengths by sentiment", use_container_width=True)
+        st.image(os.path.join(DATA_DIR, "tweet_length_distribution.png" ), caption="Distribution of tweet lengths by sentiment", width='stretch')
     except Exception:
         st.warning("File 'tweet_length_distribution.png' not found.")
 
 with eda_col4:
     st.subheader("Top Topics and Entities")
     try:
-        st.image("data/top_topics.png", caption="Most frequently discussed entities in the dataset", use_container_width=True)
+        st.image(os.path.join(DATA_DIR, "top_topics.png"), caption="Most frequently discussed entities in the dataset", width='stretch')
     except Exception:
         st.warning("File 'top_topics.png' not found.")
 
@@ -74,23 +85,14 @@ def load_final_assets():
     Retrieves the validation dataset for performance assessment.
     """
     try:
-        repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-        data_dir = os.path.join(repo_root, 'data')
-
         # Loading model components from the centralized data directory
-        model = joblib.load(os.path.join(data_dir, 'best_model.pkl'))
-        vectorizer = joblib.load(os.path.join(data_dir, 'vectorizer.pkl'))
-
-        # Loading the validation dataset from the preprocessed data directory
-        val_df = pd.read_csv(os.path.join(data_dir, 'val_clean.csv'))
-        val_df = val_df.dropna(subset=['clean_tweet'])
-        val_df.rename(columns={
-            'tweet_id': 'ID',
-            'topic': 'Entity',
-            'sentiment': 'True_Label',
-            'tweet': 'Tweet'
-        }, inplace=True)
-
+        model = joblib.load(os.path.join(DATA_DIR, 'best_model.pkl'))
+        vectorizer = joblib.load(os.path.join(DATA_DIR, 'vectorizer.pkl'))
+        # after
+        val_df = pd.read_csv(os.path.join(DATA_DIR, 'val_clean.csv'))
+        val_df = val_df.rename(columns={'sentiment': 'True_Label', 'clean_tweet': 'Tweet'})
+        val_df = val_df.dropna(subset=['Tweet'])
+                
         return model, vectorizer, val_df
     except Exception as e:
         st.error(f"Critical Error loading project assets: {e}")
@@ -104,9 +106,12 @@ if model and vectorizer and val_df is not None:
     # ---------------------------------------------------------
     # Processing the validation set through the inference pipeline
     with st.spinner('Executing model inference on the validation set...'):
-        X_val = vectorizer.transform(val_df['clean_tweet'])
+        X_val = vectorizer.transform(val_df['Tweet'])
         y_true = val_df['True_Label']
         y_pred = model.predict(X_val)
+
+        label_map = {0: 'Positive', 1: 'Negative', 2: 'Neutral', 3: 'Irrelevant'}
+        y_pred = np.array([label_map[i] for i in y_pred])
         
         # Handling LinearSVC decision function vs probabilistic outputs
         if hasattr(model, "predict_proba"):
@@ -138,7 +143,7 @@ if model and vectorizer and val_df is not None:
     st.markdown("### Model Selection (Training Phase)")
     st.write("Performance benchmarks for different algorithms tested during the development phase.")
     try:
-        st.image("data/model_comparison.png", caption="Comparative analysis of F1 Scores", width=600)
+        st.image(os.path.join(DATA_DIR, "model_comparison.png" ), caption="Comparative analysis of F1 Scores", width=600)
     except Exception:
         st.info("Model comparison visualization not available.")
 
@@ -202,8 +207,7 @@ if model and vectorizer and val_df is not None:
     }
     
     st.write(f"Identified {len(errors)} misclassified samples. Review detailed logs below:")
-    st.dataframe(errors[['Entity', 'Tweet', 'True_Label', 'Predicted_Label']].head(10), width='stretch')
-    
+    st.dataframe(errors[['Tweet', 'True_Label', 'Predicted_Label']].head(10), width='stretch')    
     st.markdown("### Technical Recommendations")
     selected_pattern = st.selectbox("Select an observed error pattern for optimization strategies:", list(error_definitions.keys()))
     st.info(f"Root Cause Analysis: {error_definitions[selected_pattern]}")
@@ -229,7 +233,7 @@ if model and vectorizer and val_df is not None:
     if st.button("Evaluate Sentiment", type="primary"):
         if input_text:
             vec_input = vectorizer.transform([input_text])
-            live_pred = model.predict(vec_input)[0]
+            live_pred = label_map[model.predict(vec_input)[0]]
             
             # Supporting both probabilistic and decision-based classification metrics
             if hasattr(model, "predict_proba"):

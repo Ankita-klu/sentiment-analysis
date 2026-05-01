@@ -1,5 +1,7 @@
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import pickle
+
 
 import pandas as pd
 import numpy as np
@@ -32,6 +34,9 @@ model = MLPClassifier([X_train.shape[1], 128, 64, 4])
 print("Training on full dataset...\n")
 
 best_acc = 0
+best_model_weights = None
+
+
 for epoch in range(50):
     m = X_train.shape[0]
     indices = np.random.permutation(m)
@@ -49,8 +54,31 @@ for epoch in range(50):
     
     if val_acc > best_acc:
         best_acc = val_acc
+
+                # Snapshot the best weights so we save the peak model, not the last epoch
+        # after
+        best_model_weights = model.get_weights()
+        # best_model_biases  = [b.copy() for b in model.biases]
+
     
     if epoch % 5 == 0:
         print(f"Epoch {epoch}: Val Acc = {val_acc:.4f}")
 
 print(f"\nFinal Accuracy: {best_acc:.4f}")
+
+
+# Restore best weights before saving
+# after
+model.set_weights(best_model_weights)
+# model.biases  = best_model_biases
+
+# Save to data/ so the Streamlit app can find them
+os.makedirs('data', exist_ok=True)
+
+with open('data/best_model.pkl', 'wb') as f:
+    pickle.dump(model, f)
+print("Saved: data/best_model.pkl")
+
+with open('data/vectorizer.pkl', 'wb') as f:
+    pickle.dump(vec, f)
+print("Saved: data/vectorizer.pkl")
