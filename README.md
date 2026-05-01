@@ -1,10 +1,29 @@
-# Twitter Entity Sentiment Analysis
+# Twitter Sentiment Analysis: Deep Learning
 
 A full end-to-end sentiment analysis pipeline built **from scratch** — including a custom TF-IDF vectorizer, a custom Multi-Layer Perceptron (MLP), and an interactive Streamlit evaluation dashboard.
 
 ---
 
-## Project Structure
+**Philosophy**: "Inside-Out" deep learning - explicit mathematics at every step, no black boxes.
+
+## Performance
+
+- **Validation Accuracy**: 74-80%
+- **Model Architecture**: [500 features] → [64 neurons] → [32 neurons] → [4 classes]
+- **Optimizer**: SGD with momentum (β=0.9)
+- **Regularization**: L2 penalty (λ=0.0001)
+- **Learning Rate**: Exponential decay (γ=0.99)
+
+## Key Features
+
+### 1. Custom TF-IDF Vectorizer
+
+Implemented from mathematical first principles:
+- Term Frequency: count(t,d) / |d|
+- Inverse Document Frequency: log(N / (1 + df(t)))
+- L2 Normalization: x / ||x||₂
+
+### 2. Neural Network
 
 ```
 sentiment-analysis/
@@ -158,16 +177,10 @@ The custom MLP achieves competitive performance given it is built entirely from 
 - The MLP's `backward()` includes L2 regularization: `∇W = (1/m)(Aᵀδ) + (λ/m)W`
 - Early stopping is implemented in `train.py` via `get_weights()` / `set_weights()` snapshots.
 
----
+Ankita Kumaria, Ngoc Anh Hoang, Zhushan Le
+
+Course: Machine Learning and Deep Learning, Semester 2
 
 ## Requirements
 
-- Python 3.9+
-- numpy
-- pandas
-- scikit-learn
-- matplotlib
-- seaborn
-- streamlit
-- wordcloud
-- joblib
+MIT License - See LICENSE file for details
