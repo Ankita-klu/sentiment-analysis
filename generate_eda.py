@@ -6,7 +6,7 @@ from wordcloud import WordCloud
 from collections import Counter
 
 DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
-df = pd.read_csv(os.path.join(DATA_DIR, 'train_clean.csv')).dropna(subset=['clean_tweet'])
+df = pd.read_csv(os.path.join(DATA_DIR, 'processed', 'train_clean.csv')).dropna(subset=['clean_tweet'])
 
 # 1. Class Distribution
 fig, ax = plt.subplots(figsize=(8, 5))
