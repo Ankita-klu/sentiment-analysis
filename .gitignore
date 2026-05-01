@@ -7,3 +7,5 @@ data/train_clean.csv
 data/val_clean.csv
 data/raw/
 archive/
+data/*.pkl
+data/*.png
