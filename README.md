@@ -171,6 +171,7 @@ Gap = Val Loss - Train Loss = Generalization Error
 ## Author
 
 Ankita Kumaria, Ngoc Anh Hoang, Zhushan Le
+
 Course: Machine Learning and Deep Learning, Semester 2
 
 ## License
