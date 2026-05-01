@@ -922,5 +922,7 @@ We successfully implemented a **4-class sentiment classifier from scratch**, dem
 ---
 
 **Authors**: Ankita Kumari, Ngoc Anh Hoang, Zhushan Le
+
 **Date**: May 2026
+
 **Institution**: KLU, Machine Learning and Deep Learning Course
