@@ -1,4 +1,4 @@
-# Twitter Sentiment Analysis: Deep Learning from Scratch
+# Twitter Sentiment Analysis: Deep Learning
 
 ## Project Overview
 
@@ -16,14 +16,14 @@ Custom implementation of a 4-class sentiment classifier (Positive, Negative, Neu
 
 ## Key Features
 
-### 1. Custom TF-IDF Vectorizer (No sklearn)
+### 1. Custom TF-IDF Vectorizer
 
 Implemented from mathematical first principles:
 - Term Frequency: count(t,d) / |d|
 - Inverse Document Frequency: log(N / (1 + df(t)))
 - L2 Normalization: x / ||x||₂
 
-### 2. Neural Network from Scratch
+### 2. Neural Network
 
 **Forward Pass:**
 - ReLU activation in hidden layers
