@@ -4,7 +4,7 @@
 
 This project implements a **4-class sentiment classifier** for Twitter data using a multi-layer neural network built from scratch. Our implementation demonstrates complete mastery of deep learning fundamentals through:
 
-- **Custom TF-IDF vectorizer** (no sklearn)
+- **Custom TF-IDF vectorizer**
 - **3-layer MLP** with explicit backpropagation
 - **Mathematical validation** via gradient checking
 - **Rigorous optimization** with momentum and regularization
