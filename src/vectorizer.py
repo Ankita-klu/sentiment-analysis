@@ -13,12 +13,15 @@ class TFIDFVectorizer:
     
     def fit(self, documents):
         """Learn vocabulary and IDF weights"""
-        documents = list(documents)  # Convert to list
+        documents = list(documents)
         term_frequencies = defaultdict(int)
         num_docs = len(documents)
-        
+
         for doc in documents:
-            terms = set(str(doc).lower().split())
+            if isinstance(doc, str):
+                terms = set(doc.lower().split())
+            else:
+                terms = set(str(doc).lower().split())
             for term in terms:
                 term_frequencies[term] += 1
         
@@ -40,33 +43,33 @@ class TFIDFVectorizer:
     
     def transform(self, documents):
         """Convert documents to TF-IDF vectors"""
-        documents = list(documents)  # Convert to list
+        documents = list(documents)
         n_docs = len(documents)
         n_features = len(self.vocab)
-        
+
         if n_features == 0:
             return np.zeros((n_docs, 1))
-        
+
         matrix = np.zeros((n_docs, n_features))
-        
+
         for doc_idx, doc in enumerate(documents):
-            terms = str(doc).lower().split()
+            doc_str = doc if isinstance(doc, str) else str(doc)
+            terms = doc_str.lower().split()
             term_counts = defaultdict(int)
             for term in terms:
                 if term in self.vocab:
                     term_counts[term] += 1
-            
+
             if len(terms) > 0:
                 for term, count in term_counts.items():
                     idx = self.vocab[term]
                     tf = count / len(terms)
                     matrix[doc_idx, idx] = tf * self.idf_weights[idx]
-                
-                # Normalize
+
                 norm = np.linalg.norm(matrix[doc_idx])
                 if norm > 0:
                     matrix[doc_idx] /= norm
-        
+
         return matrix
     
     def fit_transform(self, documents):
