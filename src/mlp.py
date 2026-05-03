@@ -23,8 +23,8 @@ def cross_entropy_loss(y_pred, y_true, epsilon=1e-9):
 class MLPClassifier:
     """
     Multi-Layer Perceptron from scratch
-    
-    Architecture: [input] -> [64] -> [32] -> [4 classes]
+
+    Architecture: [input] -> [hidden layers] -> [output]
     Activation: ReLU (hidden), Softmax (output)
     """
     
@@ -88,12 +88,13 @@ class MLPClassifier:
     
     def backward(self, y_true, lr=0.001, lambda_reg=0.0001):
         """
-        Backward pass with L2 regularization
-        
-        Computes gradients using chain rule, including L2 penalty term
-        
+        Backward pass with L2 regularization and momentum
+
+        Computes gradients using chain rule, including L2 penalty term and momentum updates
+
         ∇W^l = (1/m)(a^{l-1})^T δ^l + (λ/m)W^l
-        
+        v_{t+1} = β·v_t - η·∇L
+
         Parameters:
         - y_true: one-hot encoded true labels
         - lr: learning rate
@@ -101,16 +102,19 @@ class MLPClassifier:
         """
         m = y_true.shape[0]
         dA = self.predictions - y_true
-        
+
         for l in reversed(range(len(self.W))):
             # Compute gradient with L2 regularization term
             dW = (1/m) * (self.cache['A'][l].T @ dA) + (lambda_reg / m) * self.W[l]
             db = (1/m) * np.sum(dA, axis=0)
-            
-            # Update weights
-            self.W[l] -= lr * dW
-            self.b[l] -= lr * db
-            
+
+            # Apply momentum updates
+            self.velocity_W[l] = self.momentum * self.velocity_W[l] - lr * dW
+            self.velocity_b[l] = self.momentum * self.velocity_b[l] - lr * db
+
+            self.W[l] += self.velocity_W[l]
+            self.b[l] += self.velocity_b[l]
+
             # Backpropagate to previous layer
             if l > 0:
                 dA = dA @ self.W[l].T
