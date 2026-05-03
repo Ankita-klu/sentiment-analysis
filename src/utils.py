@@ -76,8 +76,8 @@ def gradient_check(model, X_sample, y_sample, epsilon=1e-7):
     
     print(f"Gradient check ratio: {ratio:.2e}")
     if ratio < 1e-5:
-        print("✅ Gradients are correct!")
+        print("Gradients are correct!")
         return True
     else:
-        print("❌ Gradient check failed! Check backpropagation implementation.")
+        print("Gradient check failed! Check backpropagation implementation.")
         return False

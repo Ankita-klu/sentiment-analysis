@@ -10,10 +10,9 @@ This project implements a 4-class sentiment classifier for Twitter data using a 
 
 ### 1.1 Course Context
 
-The Machine Learning and Deep Learning course emphasizes understanding neural networks from first principles rather than relying on pre-built APIs. This requires students to:
-- Implement core algorithms manually
+The Machine Learning and Deep Learning course emphasizes understanding neural networks from first principles rather than relying on pre-built APIs. Throughout the project, we learn to:
 - Understand mathematical foundations
-- Validate implementations rigorously
+- Validate implementations 
 - Analyze optimization trade-offs empirically
 
 ### 1.2 Project Approach
@@ -233,13 +232,12 @@ Variation is typical for stochastic training and reflects the non-deterministic 
 
 ### 8.2 Per-Class Performance
 
-| Class | Precision | Recall | F1 | Support |
-|-------|-----------|--------|----|---------| 
-| Positive | 0.82 | 0.78 | 0.80 | 250 |
-| Negative | 0.79 | 0.81 | 0.80 | 248 |
-| Neutral | 0.68 | 0.72 | 0.70 | 245 |
-| Irrelevant | 0.71 | 0.65 | 0.68 | 256 |
-| **Macro Avg** | **0.75** | **0.74** | **0.74** | 999 |
+| Positive | 0.78 | 0.81 | 0.79 | 266 |
+| Negative | 0.74 | 0.77 | 0.75 | 289 |
+| Neutral | 0.62 | 0.59 | 0.60 | 276 |
+| Irrelevant | 0.41 | 0.32 | 0.36 | 168 |
+| **Weighted F₁** | - | - | **0.58** | 999 |
+| **Macro F₁** | - | - | **0.63** | 999 |
 
 **Observations**:
 - Strong performance on Positive/Negative (clear sentiment signals)
@@ -422,7 +420,7 @@ The 74-80% accuracy is reasonable for a custom implementation without pre-traine
 
 ---
 
-**Authors**: Ankita Kumari, Ngoc Anh Hoang, Zhushan He
+**Authors**: Ankita Kumari, (Thi) Ngoc Anh Hoang, Zhushan He
 
 **Date**: May 2026
 
@@ -430,4 +428,8 @@ The 74-80% accuracy is reasonable for a custom implementation without pre-traine
 
 **Course**: Machine Learning and Deep Learning Course
 
+<<<<<<< HEAD
 **Professor**: Asvin Goel
+=======
+**Professor**: Asvin Goel
+>>>>>>> fb6de210d8f612e12ea560bed63c00438ec8a910
