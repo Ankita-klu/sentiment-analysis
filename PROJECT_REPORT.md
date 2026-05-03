@@ -10,10 +10,9 @@ This project implements a 4-class sentiment classifier for Twitter data using a 
 
 ### 1.1 Course Context
 
-The Machine Learning and Deep Learning course emphasizes understanding neural networks from first principles rather than relying on pre-built APIs. This requires students to:
-- Implement core algorithms manually
+The Machine Learning and Deep Learning course emphasizes understanding neural networks from first principles rather than relying on pre-built APIs. Throughout the project, we learn to:
 - Understand mathematical foundations
-- Validate implementations rigorously
+- Validate implementations 
 - Analyze optimization trade-offs empirically
 
 ### 1.2 Project Approach
@@ -422,7 +421,7 @@ The 74-80% accuracy is reasonable for a custom implementation without pre-traine
 
 ---
 
-**Authors**: Ankita Kumari, Ngoc Anh Hoang, Zhushan He
+**Authors**: Ankita Kumari, (Thi) Ngoc Anh Hoang, Zhushan He
 
 **Date**: May 2026
 
