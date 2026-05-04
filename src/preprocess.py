@@ -1,4 +1,5 @@
 import os
+import sys
 import re
 import pandas as pd
 import nltk
@@ -12,78 +13,80 @@ except LookupError:
     nltk.download('stopwords', quiet=True)
     nltk.download('wordnet', quiet=True)
 
-
-
-# Resolve paths relative to this file so the script works from any directory
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-# 1. LOAD DATA
-train_df = pd.read_csv(os.path.join(BASE_DIR, "data", "raw", "twitter_training.csv"), header=None)
-val_df   = pd.read_csv(os.path.join(BASE_DIR, "data", "raw", "twitter_validation.csv"), header=None)
+def get_data_path(filename):
+    return os.path.join(BASE_DIR, "data", filename)
 
-train_df.columns = ["tweet_id", "topic", "sentiment", "tweet"]
-val_df.columns   = ["tweet_id", "topic", "sentiment", "tweet"]
-
-# Drop missing tweets
-train_df.dropna(subset=["tweet"], inplace=True)
-val_df.dropna(subset=["tweet"], inplace=True)
-
-print(f"Training samples:   {len(train_df)}")
-print(f"Validation samples: {len(val_df)}")
-
-# 2. PREPROCESSING FUNCTION 
-lemmatizer = WordNetLemmatizer()
-stop_words = set(stopwords.words("english"))
-
-def preprocess_tweet(text):
-    text = str(text)
-
-    # Lowercase
-    text = text.lower()
-
-    # Remove URLs
+def preprocess_tweet(text, lemmatizer, stop_words):
+    text = str(text).lower()
     text = re.sub(r"http\S+|www\S+", "", text)
-
-    # Remove @mentions
     text = re.sub(r"@\w+", "", text)
-
-    # Remove hashtag symbol (keep the word)
     text = re.sub(r"#", "", text)
-
-    # Remove numbers
     text = re.sub(r"\d+", "", text)
-
-    # Remove special characters and punctuation
     text = re.sub(r"[^a-z\s]", "", text)
 
-    # Tokenize
     tokens = text.split()
-
-    # Remove stopwords and lemmatize
     tokens = [lemmatizer.lemmatize(w) for w in tokens if w not in stop_words]
-
-    # Rejoin
     return " ".join(tokens)
 
-#  3. APPLY PREPROCESSING
-print("\nPreprocessing tweets...")
-train_df["clean_tweet"] = train_df["tweet"].apply(preprocess_tweet)
-val_df["clean_tweet"]   = val_df["tweet"].apply(preprocess_tweet)
+def main():
+    # Validate input files exist
+    train_file = get_data_path("raw/twitter_training.csv")
+    val_file = get_data_path("raw/twitter_validation.csv")
 
-# 4. PREVIEW RESULTS 
-print("\nSample before and after preprocessing:")
-for i in range(3):
-    print(f"\nOriginal : {train_df['tweet'].iloc[i]}")
-    print(f"Cleaned  : {train_df['clean_tweet'].iloc[i]}")
+    if not os.path.exists(train_file):
+        print(f"Error: {train_file} not found.")
+        sys.exit(1)
+    if not os.path.exists(val_file):
+        print(f"Error: {val_file} not found.")
+        sys.exit(1)
 
-# 5. SAVE CLEANED DATA
-out_train = os.path.join(BASE_DIR, "data", "train_clean.csv")
-out_val   = os.path.join(BASE_DIR, "data", "val_clean.csv")
+    # 1. LOAD DATA
+    train_df = pd.read_csv(train_file, header=None)
+    val_df = pd.read_csv(val_file, header=None)
 
-train_df.to_csv(out_train, index=False)
-val_df.to_csv(out_val, index=False)
+    train_df.columns = ["tweet_id", "topic", "sentiment", "tweet"]
+    val_df.columns = ["tweet_id", "topic", "sentiment", "tweet"]
 
-print(f"\nSaved: {out_train}")
-print(f"Saved: {out_val}")
-print("\nPreprocessing complete!")
+    # Drop missing tweets
+    train_df.dropna(subset=["tweet"], inplace=True)
+    val_df.dropna(subset=["tweet"], inplace=True)
+
+    print(f"Training samples:   {len(train_df)}")
+    print(f"Validation samples: {len(val_df)}")
+
+    # 2. PREPROCESSING FUNCTION
+    lemmatizer = WordNetLemmatizer()
+    stop_words = set(stopwords.words("english"))
+
+    # 3. APPLY PREPROCESSING
+    print("\nPreprocessing tweets...")
+    train_df["clean_tweet"] = train_df["tweet"].apply(
+        lambda text: preprocess_tweet(text, lemmatizer, stop_words)
+    )
+    val_df["clean_tweet"] = val_df["tweet"].apply(
+        lambda text: preprocess_tweet(text, lemmatizer, stop_words)
+    )
+
+    # 4. PREVIEW RESULTS
+    print("\nSample before and after preprocessing:")
+    for i in range(min(3, len(train_df))):
+        print(f"\nOriginal : {train_df['tweet'].iloc[i]}")
+        print(f"Cleaned  : {train_df['clean_tweet'].iloc[i]}")
+
+    # 5. SAVE CLEANED DATA
+    os.makedirs(get_data_path(""), exist_ok=True)
+    out_train = get_data_path("train_clean.csv")
+    out_val = get_data_path("val_clean.csv")
+
+    train_df.to_csv(out_train, index=False)
+    val_df.to_csv(out_val, index=False)
+
+    print(f"\nSaved: {out_train}")
+    print(f"Saved: {out_val}")
+    print("\nPreprocessing complete!")
+
+if __name__ == "__main__":
+    main()
 

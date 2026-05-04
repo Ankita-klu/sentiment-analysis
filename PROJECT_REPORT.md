@@ -116,10 +116,10 @@ Input (1000) → Dense (64, ReLU) → Dense (32, ReLU) → Output (4, Softmax)
 ```
 
 **Layer Details**:
-- Layer 1: 1000×64 weights + 64 biases
-- Layer 2: 64×32 weights + 32 biases
-- Layer 3: 32×4 weights + 4 biases
-- Total parameters: 66,276
+- Layer 1: 1000×128 weights + 128 biases
+- Layer 2: 128×64 weights + 64 biases
+- Layer 3: 64×32 weights + 32 biases
+- Total parameters: 136,644
 
 ### 4.2 Activation Functions
 
