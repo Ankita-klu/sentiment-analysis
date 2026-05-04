@@ -232,12 +232,12 @@ Variation is typical for stochastic training and reflects the non-deterministic 
 
 ### 8.2 Per-Class Performance
 
-| Positive | 0.78 | 0.81 | 0.79 | 266 |
-| Negative | 0.74 | 0.77 | 0.75 | 289 |
-| Neutral | 0.62 | 0.59 | 0.60 | 276 |
+| Positive   | 0.78 | 0.81 | 0.79 | 266 |
+| Negative   | 0.74 | 0.77 | 0.75 | 289 |
+| Neutral    | 0.62 | 0.59 | 0.60 | 276 |
 | Irrelevant | 0.41 | 0.32 | 0.36 | 168 |
-| **Weighted F₁** | - | - | **0.58** | 999 |
-| **Macro F₁** | - | - | **0.63** | 999 |
+| **Weighted F₁**  | - | - | **0.58** | 999 |
+| **Macro F₁**     | - | - | **0.63** | 999 |
 
 **Observations**:
 - Strong performance on Positive/Negative (clear sentiment signals)
