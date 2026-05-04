@@ -2,11 +2,6 @@
 
 A from-scratch implementation of a 4-class sentiment classifier (Positive, Negative, Neutral, Irrelevant) using only NumPy. Built for educational purposes to demonstrate end-to-end understanding of TF-IDF vectorization and neural network fundamentals without high-level ML frameworks.
 
-**Authors:** Ankita Kumari, Ngoc Anh Hoang, Zhushan Le  
-**Course:** Machine Learning and Deep Learning  
-**Instructor:** Prof. Asvin Goel  
-**Date:** May 2026
-
 ---
 
 ## Project Overview
@@ -311,7 +306,7 @@ This is an academic project with a fixed scope. However, issues and suggestions 
 For questions or feedback regarding this project:
 - Ankita Kumari
 - Ngoc Anh Hoang  
-- Zhushan Le
+- Zhushan He
 
 **Course:** Machine Learning and Deep Learning  
 **Instructor:** Prof. Asvin Goel  
