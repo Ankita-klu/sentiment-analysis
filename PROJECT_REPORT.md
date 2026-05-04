@@ -428,8 +428,4 @@ The 74-80% accuracy is reasonable for a custom implementation without pre-traine
 
 **Course**: Machine Learning and Deep Learning Course
 
-<<<<<<< HEAD
 **Professor**: Asvin Goel
-=======
-**Professor**: Asvin Goel
->>>>>>> fb6de210d8f612e12ea560bed63c00438ec8a910
