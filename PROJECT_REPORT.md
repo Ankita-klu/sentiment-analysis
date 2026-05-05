@@ -108,12 +108,6 @@ where:
 
 ### 3.1 Critical Clarification: TF-IDF vs Word Embeddings
 
-**Prof. Goel’s Question:** Do we use word embeddings before L₂ normalization?
-
-**Answer:** **NO. We use TF-IDF, which is fundamentally different from word embeddings.**
-
-This distinction is crucial and often confusing, so we provide a comprehensive comparison:
-
 #### 3.1.1 What We Actually Implement: TF-IDF
 
 **Definition:** TF-IDF (Term Frequency-Inverse Document Frequency) is a statistical, frequency-based vectorization method.
@@ -270,38 +264,6 @@ Capture document-specific term importance (TF-IDF’s strength)
 **Trade-off Accepted:**
 We sacrifice ~20-25% accuracy (embeddings would likely get us to 75-80%) in exchange for implementation clarity and understanding.
 
-#### 3.1.7 Answering Prof. Goel’s Question Directly
-
-**Question:** “Do we still use word embedding before L2 Normalization or not?”
-
-**Complete Answer:**
-
-**No, we do not use word embeddings at any point in our pipeline.**
-
-**What we do:**
-
-1. Convert preprocessed text to TF-IDF vectors (1000-dimensional, sparse)
-1. Apply L₂ normalization to these TF-IDF vectors
-1. Feed normalized TF-IDF vectors to MLP
-
-**What we do NOT do:**
-
-1. We do NOT create word embeddings (Word2Vec, GloVe, fastText)
-1. We do NOT apply L₂ normalization to word embeddings
-1. We do NOT average word embeddings to create document vectors
-
-**The confusion likely arose because:**
-
-- Both TF-IDF and embeddings create numerical representations
-- Both can have L₂ normalization applied
-- Both are sometimes called “vectorization”
-
-**But they are fundamentally different:**
-
-- TF-IDF = statistical word counting → sparse vectors → no semantic meaning
-- Embeddings = neural network learning → dense vectors → semantic relationships
-
-Our project uses the first approach (TF-IDF) exclusively.
 
 ### 3.2 Mathematical Basis
 
