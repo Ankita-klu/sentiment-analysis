@@ -16,9 +16,9 @@ except LookupError:
     nltk.download('wordnet', quiet=True)
 
 try:
-    nltk.data.find('tokenizers/averaged_perceptron_tagger')
+    nltk.data.find('taggers/averaged_perceptron_tagger_eng')
 except LookupError:
-    nltk.download('averaged_perceptron_tagger', quiet=True)
+    nltk.download('averaged_perceptron_tagger_eng', quiet=True)
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
