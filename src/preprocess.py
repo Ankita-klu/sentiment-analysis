@@ -3,31 +3,107 @@ import sys
 import re
 import pandas as pd
 import nltk
-from nltk.corpus import stopwords
+from nltk.corpus import stopwords, wordnet
 from nltk.stem import WordNetLemmatizer
+from nltk import pos_tag, word_tokenize
 
 # Download required NLTK data
 try:
     nltk.data.find('corpora/stopwords')
+    nltk.data.find('corpora/wordnet')
 except LookupError:
     nltk.download('stopwords', quiet=True)
     nltk.download('wordnet', quiet=True)
+
+try:
+    nltk.data.find('tokenizers/averaged_perceptron_tagger')
+except LookupError:
+    nltk.download('averaged_perceptron_tagger', quiet=True)
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 def get_data_path(filename):
     return os.path.join(BASE_DIR, "data", filename)
 
-def preprocess_tweet(text, lemmatizer, stop_words):
-    text = str(text).lower()
-    text = re.sub(r"http\S+|www\S+", "", text)
-    text = re.sub(r"@\w+", "", text)
-    text = re.sub(r"#", "", text)
-    text = re.sub(r"\d+", "", text)
-    text = re.sub(r"[^a-z\s]", "", text)
+def get_wordnet_pos(treebank_tag):
+    """
+    Convert TreeBank POS tags to WordNet POS tags for accurate lemmatization
+    
+    TreeBank tags:
+    - J* = Adjective (e.g., JJ, JJR, JJS)
+    - V* = Verb (e.g., VB, VBG, VBD, VBN, VBP, VBZ)
+    - N* = Noun (e.g., NN, NNS, NNP, NNPS)
+    - R* = Adverb (e.g., RB, RBR, RBS)
+    
+    Examples:
+    - "coming" tagged as VBG (verb, gerund) → returns wordnet.VERB
+    - "running" tagged as VBG → returns wordnet.VERB
+    - "beautiful" tagged as JJ → returns wordnet.ADJ
+    """
+    if treebank_tag.startswith('J'):
+        return wordnet.ADJ
+    elif treebank_tag.startswith('V'):
+        return wordnet.VERB
+    elif treebank_tag.startswith('N'):
+        return wordnet.NOUN
+    elif treebank_tag.startswith('R'):
+        return wordnet.ADV
+    else:
+        return wordnet.NOUN  # Default to NOUN if unsure
 
+def preprocess_tweet(text, lemmatizer, stop_words):
+    """
+    Preprocess a single tweet with proper lemmatization using POS tags
+    
+    Steps:
+    1. Lowercase
+    2. Remove URLs and mentions
+    3. Remove special characters
+    4. Tokenize and POS tag to identify word types
+    5. Remove stopwords
+    6. Lemmatize with correct POS tag (crucial for accuracy)
+    
+    Without POS tags:
+    - "coming" → "coming" (treated as noun, no change)
+    - "running" → "running" (treated as noun, no change)
+    
+    With POS tags:
+    - "coming" tagged as VBG (verb) → "come" ✓
+    - "running" tagged as VBG (verb) → "run" ✓
+    
+    Example:
+    Input: "I am coming to the borders and I will kill you all,"
+    Output: "come border kill"
+    Explanation: 
+    - "I", "am", "and", "will", "you", "all" removed (stopwords)
+    - "coming" (verb) → "come"
+    - "borders" (noun) → "border"
+    """
+    # Text cleaning
+    text = str(text).lower()
+    text = re.sub(r"http\S+|www\S+", "", text)  # Remove URLs
+    text = re.sub(r"@\w+", "", text)            # Remove @mentions
+    text = re.sub(r"#", "", text)               # Remove # symbols
+    text = re.sub(r"\d+", "", text)             # Remove numbers
+    text = re.sub(r"[^a-z\s]", "", text)        # Remove special characters
+
+    # Tokenize
     tokens = text.split()
-    tokens = [lemmatizer.lemmatize(w) for w in tokens if w not in stop_words]
+    
+    # Remove stopwords
+    tokens = [w for w in tokens if w not in stop_words]
+    
+    # POS tagging for accurate lemmatization
+    if tokens:  # Only if there are tokens left after stopword removal
+        pos_tags = pos_tag(tokens)
+        
+        # Lemmatize with correct POS tag
+        # This is critical: lemmatizer needs to know if a word is verb/noun/adj/adv
+        tokens = [
+            lemmatizer.lemmatize(word, pos=get_wordnet_pos(pos)) 
+            for word, pos in pos_tags
+        ]
+    
     return " ".join(tokens)
 
 def main():
@@ -56,7 +132,7 @@ def main():
     print(f"Training samples:   {len(train_df)}")
     print(f"Validation samples: {len(val_df)}")
 
-    # 2. PREPROCESSING FUNCTION
+    # 2. PREPROCESSING SETUP
     lemmatizer = WordNetLemmatizer()
     stop_words = set(stopwords.words("english"))
 
@@ -89,4 +165,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
