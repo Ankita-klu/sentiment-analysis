@@ -186,46 +186,46 @@ This would give us a dense 300-dimensional vector (all non-zero values).
 
 #### 3.1.3 Side-by-Side Comparison
 
-|Aspect              |**TF-IDF (What We Use)**              |**Word Embeddings (NOT Used)**            |
-|--------------------|--------------------------------------|------------------------------------------|
-|**Dimensionality**  |1000 (= vocabulary size)              |50-300 (fixed, independent of vocab)      |
-|**Density**         |Sparse (~2-5% non-zero)               |Dense (100% non-zero)                     |
-|**Semantic Meaning**|❌ None - “good” and “great” unrelated |✅ Yes - similar words have similar vectors|
-|**Word Order**      |❌ Ignored - bag of words              |❌ Also ignored (unless using RNN)         |
-|**Training**        |⚡ No training - statistical count     |🔄 Pre-trained on large corpus             |
-|**Values**          |📊 Frequency-based statistics          |🧠 Learned from neural network             |
-|**Example: “good”** |Position 347: 0.52 (if appears)       |[0.21, -0.15, 0.43, …, 0.09]              |
-|**Example: “great”**|Position 891: 0.61 (if appears)       |[0.19, -0.14, 0.51, …, 0.11]              |
-|**Similarity**      |No relationship (different positions) |High similarity (cos ≈ 0.87)              |
-|**Negation**        |“not good” = “not” + “good” separately|“not good” = “not” + “good” separately    |
-|**Computation**     |Fast (count + multiply)               |Fast (lookup)                             |
-|**Memory**          |m × 1000 floats                       |m × 300 floats                            |
+|Aspect              |**TF-IDF (What We Use)**              |**Word Embeddings (NOT Used)**          |
+|--------------------|--------------------------------------|----------------------------------------|
+|**Dimensionality**  |1000 (= vocabulary size)              |50-300 (fixed, independent of vocab)    |
+|**Density**         |Sparse (~2-5% non-zero)               |Dense (100% non-zero)                   |
+|**Semantic Meaning**|None - “good” and “great” unrelated   |Yes - similar words have similar vectors|
+|**Word Order**      |Ignored - bag of words                |Also ignored (unless using RNN)         |
+|**Training**        |No training - statistical count       |Pre-trained on large corpus             |
+|**Values**          |Frequency-based statistics            |Learned from neural network             |
+|**Example: “good”** |Position 347: 0.52 (if appears)       |[0.21, -0.15, 0.43, …, 0.09]            |
+|**Example: “great”**|Position 891: 0.61 (if appears)       |[0.19, -0.14, 0.51, …, 0.11]            |
+|**Similarity**      |No relationship (different positions) |High similarity (cos ≈ 0.87)            |
+|**Negation**        |“not good” = “not” + “good” separately|“not good” = “not” + “good” separately  |
+|**Computation**     |Fast (count + multiply)               |Fast (lookup)                           |
+|**Memory**          |m × 1000 floats                       |m × 300 floats                          |
 
 #### 3.1.4 Why This Distinction Matters
 
 **What TF-IDF Can Do:**
-✅ Identify discriminative words (high IDF = rare, important terms)  
-✅ Weight words by importance (TF = how much this word appears here)  
-✅ Normalize for document length (L₂ normalization)  
-✅ Fast computation with no training required
+Identify discriminative words (high IDF = rare, important terms)  
+Weight words by importance (TF = how much this word appears here)  
+Normalize for document length (L₂ normalization)  
+Fast computation with no training required
 
 **What TF-IDF Cannot Do:**
-❌ Recognize “good” and “great” are similar  
-❌ Understand “not good” is different from “good”  
-❌ Capture word order or context  
-❌ Handle out-of-vocabulary words (unknown words ignored)  
-❌ Detect sarcasm or sentiment from word relationships
+Recognize “good” and “great” are similar  
+Understand “not good” is different from “good”  
+Capture word order or context  
+Handle out-of-vocabulary words (unknown words ignored)  
+Detect sarcasm or sentiment from word relationships
 
 **What Word Embeddings Can Do (that TF-IDF cannot):**
-✅ Capture semantic relationships: king - man + woman ≈ queen  
-✅ Handle synonyms: “happy” ≈ “joyful” ≈ “glad”  
-✅ Generalize to similar words not in training  
-✅ Provide denser, more informative representations
+Capture semantic relationships: king - man + woman ≈ queen  
+Handle synonyms: “happy” ≈ “joyful” ≈ “glad”  
+Generalize to similar words not in training  
+Provide denser, more informative representations
 
 **What Word Embeddings Cannot Do (same as TF-IDF):**
-❌ Understand word order without additional architecture (RNN/Transformer)  
-❌ Detect negation without context modeling  
-❌ Capture document-specific term importance (TF-IDF’s strength)
+Understand word order without additional architecture (RNN/Transformer)  
+Detect negation without context modeling  
+Capture document-specific term importance (TF-IDF’s strength)
 
 #### 3.1.5 Our Pipeline: Where L₂ Normalization Happens
 
@@ -511,29 +511,29 @@ We performed comprehensive gradient checking on all 136,644 parameters using a s
 
 |Parameter|Shape      |Elements|Analytical Norm|Numerical Norm|Relative Error|Status|
 |---------|-----------|--------|---------------|--------------|--------------|------|
-|**W1**   |(1000, 128)|128,000 |4.7234         |4.7234        |**2.41×10⁻⁸** |✅ PASS|
-|**b1**   |(128,)     |128     |0.3421         |0.3421        |**1.83×10⁻⁸** |✅ PASS|
+|**W1**   |(1000, 128)|128,000 |4.7234         |4.7234        |**2.41×10⁻⁸** |PASS  |
+|**b1**   |(128,)     |128     |0.3421         |0.3421        |**1.83×10⁻⁸** |PASS  |
 
 **Layer 2 (Hidden1 → Hidden2):**
 
 |Parameter|Shape    |Elements|Analytical Norm|Numerical Norm|Relative Error|Status|
 |---------|---------|--------|---------------|--------------|--------------|------|
-|**W2**   |(128, 64)|8,192   |2.1453         |2.1453        |**3.17×10⁻⁸** |✅ PASS|
-|**b2**   |(64,)    |64      |0.1872         |0.1872        |**2.09×10⁻⁸** |✅ PASS|
+|**W2**   |(128, 64)|8,192   |2.1453         |2.1453        |**3.17×10⁻⁸** |PASS  |
+|**b2**   |(64,)    |64      |0.1872         |0.1872        |**2.09×10⁻⁸** |PASS  |
 
 **Layer 3 (Hidden2 → Output):**
 
 |Parameter|Shape  |Elements|Analytical Norm|Numerical Norm|Relative Error|Status|
 |---------|-------|--------|---------------|--------------|--------------|------|
-|**W3**   |(64, 4)|256     |0.8932         |0.8932        |**4.73×10⁻⁸** |✅ PASS|
-|**b3**   |(4,)   |4       |0.0421         |0.0421        |**1.92×10⁻⁸** |✅ PASS|
+|**W3**   |(64, 4)|256     |0.8932         |0.8932        |**4.73×10⁻⁸** |PASS  |
+|**b3**   |(4,)   |4       |0.0421         |0.0421        |**1.92×10⁻⁸** |PASS  |
 
 **Overall Summary:**
 
 - **Total parameters checked:** 136,644
 - **Maximum relative error:** 4.73×10⁻⁸
 - **All parameters:** < 10⁻⁷ (excellent threshold)
-- **Conclusion:** ✅ **Backpropagation implementation is mathematically correct**
+- **Conclusion:**  **Backpropagation implementation is mathematically correct**
 
 #### 5.3.5 Element-wise Verification Examples
 
@@ -546,7 +546,7 @@ Analytical gradient:  -0.00347281
 Numerical gradient:   -0.00347282
 Absolute difference:   0.00000001
 Relative error:        2.88×10⁻⁹
-Status:               ✅ Perfect agreement
+Status:                Perfect agreement
 ```
 
 **Example 2: W3[63, 3] (last weight in output layer)**
@@ -556,7 +556,7 @@ Analytical gradient:   0.01234567
 Numerical gradient:    0.01234568
 Absolute difference:   0.00000001
 Relative error:        8.10×10⁻⁹
-Status:               ✅ Perfect agreement
+Status:                Perfect agreement
 ```
 
 **Example 3: b2[31] (middle bias in hidden layer 2)**
@@ -566,7 +566,7 @@ Analytical gradient:  -0.00089123
 Numerical gradient:   -0.00089124
 Absolute difference:   0.00000001
 Relative error:        1.12×10⁻⁸
-Status:               ✅ Perfect agreement
+Status:                Perfect agreement
 ```
 
 **Example 4: W2[100, 50] (middle weight in hidden layer)**
@@ -576,7 +576,7 @@ Analytical gradient:   0.00521847
 Numerical gradient:    0.00521848
 Absolute difference:   0.00000001
 Relative error:        1.92×10⁻⁹
-Status:               ✅ Perfect agreement
+Status:                Perfect agreement
 ```
 
 All element-wise checks show agreement to **7-8 significant figures**, confirming gradient computation works correctly across all parameters and all layers.
@@ -644,7 +644,7 @@ Our backpropagation computes gradients correctly. The model learns from actual g
 
 # JUST RIGHT (ε = 1e-7):
 # → Balances approximation error and numerical precision
-# → Our choice ✓
+# → Our choice [PASS]
 ```
 
 **Pitfall 2: Forgetting to Restore Parameters**
@@ -663,7 +663,7 @@ param[i,j] = old_value + epsilon
 loss_plus = compute_loss()
 param[i,j] = old_value - epsilon
 loss_minus = compute_loss()
-param[i,j] = old_value  # Restore ✓
+param[i,j] = old_value  # Restore [PASS]
 ```
 
 **Pitfall 3: Using Full Training Batch**
@@ -716,11 +716,11 @@ Suppose our backpropagation were incorrect. What’s the probability it accident
 
 **What it DOES detect:**
 
-- Incorrect chain rule application ✓
-- Missing terms in gradient expressions ✓
-- Matrix dimension mismatches ✓
-- Sign errors ✓
-- Scaling errors (missing factors) ✓
+- Incorrect chain rule application [PASS]
+- Missing terms in gradient expressions [PASS]
+- Matrix dimension mismatches [PASS]
+- Sign errors [PASS]
+- Scaling errors (missing factors) [PASS]
 
 **Lesson:** Gradient checking verifies the **math** is correct, not that the **model** will work well.
 
@@ -797,7 +797,7 @@ def gradient_check_full(model, X_sample, y_sample, epsilon=1e-7, threshold=1e-5)
         }
         
         # Print summary
-        status = "✅ PASS" if relative_error < threshold else "❌ FAIL"
+        status = "PASS" if relative_error < threshold else "FAIL"
         print(f"  Shape: {param.shape}")
         print(f"  Analytical ||∇||: {results[param_name]['analytical_norm']:.4f}")
         print(f"  Numerical  ||∇||: {results[param_name]['numerical_norm']:.4f}")
@@ -811,7 +811,7 @@ def gradient_check_full(model, X_sample, y_sample, epsilon=1e-7, threshold=1e-5)
     
     print(f"Maximum Relative Error: {max_error:.2e}")
     print(f"Threshold: {threshold:.2e}")
-    print(f"Overall Status: {'✅ ALL PASSED' if all_passed else '❌ SOME FAILED'}")
+    print(f"Overall Status: {' ALL PASSED' if all_passed else ' SOME FAILED'}")
     print("=" * 70)
     
     return results
@@ -829,21 +829,21 @@ Checking W1...
   Analytical ||∇||: 4.7234
   Numerical  ||∇||: 4.7234
   Relative Error:   2.41e-08
-  Status: ✅ PASS
+  Status: PASS
 
 Checking b1...
   Shape: (128,)
   Analytical ||∇||: 0.3421
   Numerical  ||∇||: 0.3421
   Relative Error:   1.83e-08
-  Status: ✅ PASS
+  Status: PASS
 
 [... similar for W2, b2, W3, b3 ...]
 
 ======================================================================
 Maximum Relative Error: 4.73e-08
 Threshold: 1.00e-05
-Overall Status: ✅ ALL PASSED
+Overall Status:  ALL PASSED
 ======================================================================
 ```
 
@@ -1277,10 +1277,10 @@ Max-subtraction maintains numerical stability without changing softmax output.
 
 ### 13.1 Implementation Validation
 
-✓ **Gradient checking confirms backpropagation correctness** (error < 1e-5)  
-✓ **Momentum accelerates convergence** (2-3x fewer epochs vs vanilla SGD)  
-✓ **Learning rate decay improves final accuracy** (~2-3% improvement)  
-✓ **L2 regularization prevents overfitting** (validation loss tracks training loss)
+[PASS] **Gradient checking confirms backpropagation correctness** (error < 1e-5)  
+[PASS] **Momentum accelerates convergence** (2-3x fewer epochs vs vanilla SGD)  
+[PASS] **Learning rate decay improves final accuracy** (~2-3% improvement)  
+[PASS] **L2 regularization prevents overfitting** (validation loss tracks training loss)
 
 ### 13.2 Architectural Insights
 
@@ -1397,13 +1397,13 @@ This project successfully demonstrates **deep understanding of neural network fu
 
 **What we built:**
 
-1. ✓ Custom TF-IDF vectorizer with L₂ normalization
-1. ✓ 3-layer MLP with ReLU and softmax activations
-1. ✓ Backpropagation with analytical gradient computation
-1. ✓ SGD with momentum and learning rate decay
-1. ✓ L2 regularization for overfitting prevention
-1. ✓ Gradient checking for mathematical validation
-1. ✓ Interactive Streamlit dashboard for model analysis
+1. [PASS] Custom TF-IDF vectorizer with L₂ normalization
+1. [PASS] 3-layer MLP with ReLU and softmax activations
+1. [PASS] Backpropagation with analytical gradient computation
+1. [PASS] SGD with momentum and learning rate decay
+1. [PASS] L2 regularization for overfitting prevention
+1. [PASS] Gradient checking for mathematical validation
+1. [PASS] Interactive Streamlit dashboard for model analysis
 
 **Final Performance:**
 
@@ -1413,7 +1413,7 @@ This project successfully demonstrates **deep understanding of neural network fu
 
 ### 15.2 Educational Achievement
 
-**Primary Goal:** Understanding over performance ✓ **ACHIEVED**
+**Primary Goal:** Understanding over performance [PASS] **ACHIEVED**
 
 **Key Learnings:**
 
