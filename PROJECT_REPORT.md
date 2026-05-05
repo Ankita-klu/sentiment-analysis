@@ -621,6 +621,8 @@ The project fulfills its primary objective: demonstrating rigorous implementatio
 
 ## References
 
+Course Materials: https://rajgoel.github.io/course-machine-learning
+
 Goodfellow, I., Bengio, Y., & Courville, A. (2016). *Deep Learning*. MIT Press.
 
 Kingma, D. P., & Ba, J. (2014). Adam: A method for stochastic optimization. *arXiv preprint arXiv:1412.6980*.
@@ -629,7 +631,7 @@ Manning, C. D., Raghavan, P., & Schütze, H. (2008). *Introduction to Informatio
 
 ---
 
-**Project Team**: Ankita Kumari, Ngoc Anh Hoang, Zhushan Le
+**Project Team**: Ankita Kumari, Ngoc Anh Hoang, Zhushan He
 
 **Course**: Machine Learning and Deep Learning
 
